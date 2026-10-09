@@ -88,6 +88,7 @@ class CompetencySubThemeServiceImpl3Test {
         ReflectionTestUtils.setField(service, "competencySubThemeRepository", repository);
         ReflectionTestUtils.setField(service, "outboundRequestHandlerServiceImpl", outboundRequestHandlerServiceImpl);
         ReflectionTestUtils.setField(service, "designationService", designationService);
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
     @Test
     void testLoadCompetencySubTheme_success_newEntriesAdded() throws Exception {

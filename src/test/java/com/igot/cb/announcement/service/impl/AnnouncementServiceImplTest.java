@@ -86,6 +86,10 @@ class AnnouncementServiceImplTest {
 
     private ObjectMapper realMapper = new ObjectMapper();
 
+    @BeforeEach
+    void setUp() {
+        lenient().when(serverProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+    }
 
     /**
      * Test case for createAnnouncement method when payload validation fails
@@ -335,6 +339,7 @@ class AnnouncementServiceImplTest {
         String reqJsonString = "{\"key\":\"value\"}";
 
         when(objectMapper.writeValueAsString(any())).thenReturn(reqJsonString);
+        when(serverProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
         String result = announcementService.generateRedisJwtTokenKey(requestPayload);
 

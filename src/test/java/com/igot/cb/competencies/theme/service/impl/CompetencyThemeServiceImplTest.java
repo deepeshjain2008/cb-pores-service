@@ -102,6 +102,7 @@ class CompetencyThemeServiceImplTest {
 
     @BeforeEach
     void setup() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     /**
@@ -625,12 +626,15 @@ class CompetencyThemeServiceImplTest {
         CompetencyThemeServiceImpl service = newUninitializedService();
         ObjectMapper objectMapper = mock(ObjectMapper.class);
         ReflectionTestUtils.setField(service, "objectMapper", objectMapper);
+        CbServerProperties cbServerProperties = mock(CbServerProperties.class);
+        ReflectionTestUtils.setField(service, "cbServerProperties", cbServerProperties);
 
         Object requestPayload = new Object();
         String reqJsonString = "{\"key\":\"value\"}";
 
         try {
             when(objectMapper.writeValueAsString(requestPayload)).thenReturn(reqJsonString);
+            when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
             String result = service.generateRedisJwtTokenKey(requestPayload);
 
@@ -1275,6 +1279,7 @@ class CompetencyThemeServiceImplTest {
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearchString");
 
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(null);
 

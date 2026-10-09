@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -79,6 +80,11 @@ class ContentPartnerServiceImplTest {
 
     private ContentPartnerEntity mockEntity;
     private final String partnerCode = "partner-123";
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+    }
 
     /**
      * Test case for creating a content partner with an existing partner name.

@@ -76,7 +76,7 @@ class OrgBookmarkServiceImplTest {
         """;
         validPayload = mapper.readTree(json);
 
-
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
        // when(cbServerProperties.getOrgSearchPath()).thenReturn("/search");
     }
 

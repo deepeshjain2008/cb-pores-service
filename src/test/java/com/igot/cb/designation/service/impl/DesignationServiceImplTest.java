@@ -111,6 +111,7 @@ class DesignationServiceImplTest {
     void setUp() {
         when(cbServerProperties.getDesignationValidationRegex())
                 .thenReturn("^[a-zA-Z0-9 ()&/,+-]*$");
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     /**
@@ -678,6 +679,7 @@ class DesignationServiceImplTest {
         } catch (Exception e) {
             fail("Exception should not be thrown");
         }
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
         // Act
         String result = designationService.generateRedisJwtTokenKey(requestPayload);

@@ -90,6 +90,7 @@ class CompetencySubThemeServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     private static CompetencySubThemeServiceImpl newUninitializedService() {
@@ -241,6 +242,7 @@ class CompetencySubThemeServiceImplTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
         // Act
         String result = competencySubThemeService.generateRedisJwtTokenKey(requestPayload);

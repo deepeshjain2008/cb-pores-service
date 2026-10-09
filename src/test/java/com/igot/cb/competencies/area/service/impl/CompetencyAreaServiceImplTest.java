@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -87,6 +88,11 @@ class CompetencyAreaServiceImplTest {
     private static CompetencyAreaServiceImpl newUninitializedService() {
         Objenesis objenesis = new ObjenesisStd();
         return objenesis.newInstance(CompetencyAreaServiceImpl.class);
+    }
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     /**

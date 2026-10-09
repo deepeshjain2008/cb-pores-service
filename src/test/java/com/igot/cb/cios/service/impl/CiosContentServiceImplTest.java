@@ -33,6 +33,7 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -105,6 +106,11 @@ class CiosContentServiceImplTest {
 
     @Mock
     private ContentPartnerRepository contentPartnerRepository;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+    }
 
     private ObjectMapper realObjectMapper = new ObjectMapper();
 

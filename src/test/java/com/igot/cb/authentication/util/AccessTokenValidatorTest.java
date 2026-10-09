@@ -54,6 +54,7 @@ class AccessTokenValidatorTest {
         expiredToken = generateToken("expiredUserId", Time.currentTime() - 1000, "expectedIssuer");
         invalidSignatureToken = generateToken("invalidSignatureUserId", Time.currentTime() + 1000, "expectedIssuer");
         invalidIssuerToken = generateToken("invalidIssuerUserId", Time.currentTime() + 1000, "invalidIssuer");
+
         spyAccessTokenValidator = Mockito.spy(new AccessTokenValidator(keyManager));
     }
 
