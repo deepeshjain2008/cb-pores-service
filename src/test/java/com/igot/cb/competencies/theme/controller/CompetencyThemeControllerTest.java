@@ -38,7 +38,6 @@ class CompetencyThemeControllerTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
     }
 
     @Test

@@ -13,6 +13,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class RedisCacheMngrTest {
 
@@ -31,8 +32,9 @@ class RedisCacheMngrTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        ReflectionTestUtils.setField(redisCacheMngr, "redisTemplate", redisTemplate);
+        when(redisTemplate.<String, String>opsForHash()).thenReturn(hashOperations);
         redisCacheMngr.setHashOperations(redisTemplate);
-      // when(redisTemplate.opsForHash()).thenReturn(hashOperations);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
@@ -54,7 +56,7 @@ class RedisCacheMngrTest {
     void testHgetSuccess() {
         when(hashOperations.multiGet(eq("hashKey"), anyList())).thenReturn(List.of("val1", "val2"));
         List<String> result = redisCacheMngr.hget("hashKey", 0, "field1", "field2");
-        assertNull(result);
+        assertEquals(List.of("val1", "val2"), result);
     }
 
     @Test

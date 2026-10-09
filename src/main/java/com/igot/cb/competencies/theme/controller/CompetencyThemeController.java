@@ -6,8 +6,8 @@ import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.Constants;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,10 +25,10 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/competencyTheme")
 @Slf4j
+@RequiredArgsConstructor
 public class CompetencyThemeController {
 
-  @Autowired
-  private CompetencyThemeService competencyThemeService;
+  private final CompetencyThemeService competencyThemeService;
 
   @PostMapping(value = "/upload", consumes = "multipart/form-data")
   public ResponseEntity<String> loadCompetencyAreas(@RequestParam("file") MultipartFile file, @RequestHeader(Constants.X_AUTH_TOKEN) String token) {

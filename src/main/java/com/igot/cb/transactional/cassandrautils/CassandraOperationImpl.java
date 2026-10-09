@@ -16,11 +16,11 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 
@@ -29,12 +29,12 @@ import org.springframework.stereotype.Component;
  * @author Ruksana
  */
 @Component
+@RequiredArgsConstructor
 public class CassandraOperationImpl implements CassandraOperation {
 
     private Logger logger = LoggerFactory.getLogger(CassandraOperationImpl.class);
 
-    @Autowired
-    CassandraConnectionManager connectionManager;
+    final CassandraConnectionManager connectionManager;
 
     private Select processQuery(String keyspaceName, String tableName, Map<String, Object> propertyMap,
                                 List<String> fields) {

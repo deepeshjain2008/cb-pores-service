@@ -13,9 +13,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -27,19 +27,17 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class NotificationConsumer {
     private ObjectMapper mapper = new ObjectMapper();
 
     private Logger logger = LoggerFactory.getLogger(DemandServiceImpl.class);
 
-    @Autowired
-    private RequestHandlerServiceImpl requestHandlerService;
+    private final RequestHandlerServiceImpl requestHandlerService;
 
-    @Autowired
-    private CassandraOperation cassandraOperation;
+    private final CassandraOperation cassandraOperation;
 
-    @Autowired
-    private CbServerProperties configuration;
+    private final CbServerProperties configuration;
 
     @KafkaListener(groupId = "${kafka.topic.demand.content.group}", topics = "${kafka.topic.demand.request}")
     public void demandContentConsumer(ConsumerRecord<String, String> data) {

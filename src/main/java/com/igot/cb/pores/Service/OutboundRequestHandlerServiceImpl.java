@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.igot.cb.pores.logger.CbExtLogger;
 import com.igot.cb.pores.util.Constants;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -19,11 +19,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class OutboundRequestHandlerServiceImpl {
 	private CbExtLogger log = new CbExtLogger(getClass().getName());
 
-	@Autowired
-	private RestTemplate restTemplate;
+	private final RestTemplate restTemplate;
 
 	/**
 	 * @param uri

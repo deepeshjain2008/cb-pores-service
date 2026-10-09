@@ -6,16 +6,16 @@ import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.Constants;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/orgBookmark")
+@RequiredArgsConstructor
 public class OrgBookmarkController {
-    @Autowired
-    private OrgBookmarkService orgBookmarkService;
+    private final OrgBookmarkService orgBookmarkService;
 
     @PostMapping("/v1/create")
     public ResponseEntity<?> createOrgBookmark(@RequestBody JsonNode orgDetails,

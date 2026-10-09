@@ -57,8 +57,6 @@ class CompetencyThemeServiceImpl2Test {
     @Mock private AccessTokenValidator accessTokenValidator;
     @Mock private RedisTemplate<String, SearchResult> redisTemplate;
     @Mock private CompetencyThemeRepository competencyThemeRepository;
-    @Spy
-    private CompetencyThemeServiceImpl spyCompetencyThemeService;
 
     @Mock private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
     @Mock private DesignationService designationService;

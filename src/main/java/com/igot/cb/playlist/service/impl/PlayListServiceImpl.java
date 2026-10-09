@@ -45,11 +45,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -57,48 +57,38 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PlayListServiceImpl implements PlayListSerive {
 
-  @Autowired
-  private PlayListRepository playListRepository;
+  private final PlayListRepository playListRepository;
 
   @Value("${playlist.redis.ttl}")
   private long playListRedisTtl;
 
-  @Autowired
-  private RedisTemplate<String, PlayListEntity> playListEntityRedisTemplate;
+  private final RedisTemplate<String, PlayListEntity> playListEntityRedisTemplate;
 
-  @Autowired
-  ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
-  @Autowired
-  private RedisCacheMngr redisCacheMngr;
+  private final RedisCacheMngr redisCacheMngr;
 
   @Value("${redis.insights.index}")
   private int redisInsightIndex;
 
-  @Autowired
-  private ContentService contentService;
+  private final ContentService contentService;
 
-  @Autowired
-  private CbServerProperties cbServerProperties;
+  private final CbServerProperties cbServerProperties;
 
-  @Autowired
-  private PayloadValidation payloadValidation;
+  private final PayloadValidation payloadValidation;
 
   private Logger logger = LoggerFactory.getLogger(getClass().getName());
 
-  @Autowired
-  private EsUtilService esUtilService;
+  private final EsUtilService esUtilService;
 
-  @Autowired
-  private RedisTemplate<String, SearchResult> redisTemplate;
+  private final RedisTemplate<String, SearchResult> redisTemplate;
 
-  @Autowired
-  private CacheService cacheService;
+  private final CacheService cacheService;
 
-  @Autowired
-  private OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
+  private final OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
 
   @Value("${search.result.redis.ttl}")
   private long searchResultRedisTtl;

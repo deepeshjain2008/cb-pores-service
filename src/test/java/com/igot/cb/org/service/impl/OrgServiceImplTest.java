@@ -50,9 +50,6 @@ class OrgServiceImplTest {
     @Mock
     private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
-    @Mock
-    private CbServerProperties propertiesConfig;
-
     @Mock(lenient = true)
     private RequestHandlerServiceImpl requestHandlerService;
 
@@ -61,7 +58,6 @@ class OrgServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.initMocks(this);
     }
 
     /**
@@ -266,8 +262,8 @@ class OrgServiceImplTest {
         String userId = "testUser";
         List<String> requiredRoles = Arrays.asList("MDO_ADMIN", "SPV_ADMIN");
 
-        when(propertiesConfig.getSbUrl()).thenReturn("http://test.com/");
-        when(propertiesConfig.getUserReadEndPoint()).thenReturn("user/");
+        when(cbServerProperties.getSbUrl()).thenReturn("http://test.com/");
+        when(cbServerProperties.getUserReadEndPoint()).thenReturn("user/");
 
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put(Constants.ROLES, Arrays.asList("SPV_ADMIN", "CONTENT_CREATOR"));
@@ -301,8 +297,8 @@ class OrgServiceImplTest {
         String userId = "testUser";
         List<String> requiredRoles = new ArrayList<>();
 
-        when(propertiesConfig.getSbUrl()).thenReturn("http://test.com/");
-        when(propertiesConfig.getUserReadEndPoint()).thenReturn("user/");
+        when(cbServerProperties.getSbUrl()).thenReturn("http://test.com/");
+        when(cbServerProperties.getUserReadEndPoint()).thenReturn("user/");
 
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put(Constants.ROLES, Arrays.asList("ROLE1", "ROLE2"));
@@ -331,8 +327,8 @@ class OrgServiceImplTest {
         String userId = "testUser";
         List<String> requiredRoles = Arrays.asList("ADMIN", "MANAGER");
 
-        when(propertiesConfig.getSbUrl()).thenReturn("http://test.com/");
-        when(propertiesConfig.getUserReadEndPoint()).thenReturn("user/");
+        when(cbServerProperties.getSbUrl()).thenReturn("http://test.com/");
+        when(cbServerProperties.getUserReadEndPoint()).thenReturn("user/");
 
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put("roles", Arrays.asList("USER", "GUEST"));
@@ -361,8 +357,8 @@ class OrgServiceImplTest {
         String userId = "testUser";
         List<String> requiredRoles = new ArrayList<>();
 
-        when(propertiesConfig.getSbUrl()).thenReturn("http://test.com/");
-        when(propertiesConfig.getUserReadEndPoint()).thenReturn("user/");
+        when(cbServerProperties.getSbUrl()).thenReturn("http://test.com/");
+        when(cbServerProperties.getUserReadEndPoint()).thenReturn("user/");
 
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put("roles", new ArrayList<>());
@@ -518,7 +514,7 @@ class OrgServiceImplTest {
         String userId = "testUserId";
         String newFrameworkId = "newFrameworkId";
 
-        String url = propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId;
+        String url = cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId;
 
         Map<String, Object> mockResponseMap = new HashMap<>();
         mockResponseMap.put(Constants.ROLES, List.of("admin", "user"));
@@ -567,7 +563,7 @@ class OrgServiceImplTest {
         String userId = "testUserId";
         String newFrameworkId = "newFrameworkId";
 
-        String url = propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId;
+        String url = cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId;
 
         Map<String, Object> mockResponseMap = new HashMap<>();
         mockResponseMap.put(Constants.ROLES, List.of("MDO_LEADER", "user"));
@@ -616,7 +612,7 @@ class OrgServiceImplTest {
         String userId = "testUserId";
         String newFrameworkId = "newFrameworkId";
 
-        String url = propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId;
+        String url = cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId;
 
         Map<String, Object> mockResponseMap = new HashMap<>();
         mockResponseMap.put(Constants.ROLES, List.of("MDO_LEADER", "user"));
@@ -665,7 +661,7 @@ class OrgServiceImplTest {
         String userId = "testUserId";
         String newFrameworkId = "newFrameworkId";
 
-        String url = propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId;
+        String url = cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId;
 
         Map<String, Object> mockResponseMap = new HashMap<>();
         mockResponseMap.put(Constants.ROLES, List.of("MDO_LEADER", "user"));
@@ -706,7 +702,7 @@ class OrgServiceImplTest {
         String userId = "testUserId";
         String newFrameworkId = "newFrameworkId";
 
-        String url = propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId;
+        String url = cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId;
 
         Map<String, Object> mockResponseMap = new HashMap<>();
         mockResponseMap.put(Constants.ROLES, List.of("MDO_LEADER", "user"));

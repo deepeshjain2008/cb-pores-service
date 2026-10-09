@@ -8,8 +8,8 @@ import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 
 import com.igot.cb.pores.util.Constants;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,10 +29,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/designation")
 @Slf4j
+@RequiredArgsConstructor
 public class DesignationController {
 
-  @Autowired
-  private DesignationService designationService;
+  private final DesignationService designationService;
 
   @PostMapping(value = "/upload", consumes = "multipart/form-data")
   public ResponseEntity<String> loadDesignation(@RequestParam("file") MultipartFile file, @RequestHeader(Constants.X_AUTH_TOKEN) String token) {

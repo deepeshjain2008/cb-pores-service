@@ -6,9 +6,9 @@ import com.igot.cb.pores.elasticsearch.dto.SearchResult;
 import com.igot.cb.pores.util.Constants;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -17,15 +17,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class ContentPartnerConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(ContentPartnerConsumer.class);
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private CiosContentService ciosContentService;
+    private final CiosContentService ciosContentService;
 
     @Value("${content.partner.search.page-size}")
     private int pageSize;

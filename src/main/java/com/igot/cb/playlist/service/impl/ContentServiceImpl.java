@@ -11,33 +11,29 @@ import com.igot.cb.pores.util.Constants;
 
 import java.util.*;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.codehaus.plexus.util.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ContentServiceImpl implements ContentService {
 
-  @Autowired
-  private CbServerProperties serverConfig;
+  private final CbServerProperties serverConfig;
 
-  @Autowired
-  private DataCacheManager dataCacheMgr;
+  private final DataCacheManager dataCacheMgr;
 
-  @Autowired
-  private RedisCacheMngr redisCacheMgr;
+  private final RedisCacheMngr redisCacheMgr;
 
-  @Autowired
-  private RestTemplate restTemplate;
+  private final RestTemplate restTemplate;
 
-  @Autowired
-  private ObjectMapper mapper;
+  private final ObjectMapper mapper;
 
   @Override
   public Map<String, Object> readContentFromCache(String contentId, List<String> fields) {

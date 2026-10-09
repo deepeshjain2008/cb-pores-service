@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,10 +14,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class RedisCacheMngr {
 
-  @Autowired
-  private RedisConfig redisConfig;
+  private final RedisConfig redisConfig;
 
   private RedisTemplate<String, String> redisTemplate;
   private HashOperations<String, String, String> hashOperations;

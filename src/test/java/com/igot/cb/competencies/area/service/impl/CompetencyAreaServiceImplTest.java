@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
@@ -82,6 +84,11 @@ class CompetencyAreaServiceImplTest {
     private MultipartFile multipartFile;
     private static final String TEST_ID = "COMAREA-000001";
 
+    private static CompetencyAreaServiceImpl newUninitializedService() {
+        Objenesis objenesis = new ObjenesisStd();
+        return objenesis.newInstance(CompetencyAreaServiceImpl.class);
+    }
+
     /**
      * Test case for createCompArea method when index is present, data is not empty, and user is unauthorized.
      * Path constraints:
@@ -92,7 +99,6 @@ class CompetencyAreaServiceImplTest {
     @Test
     void test_createCompArea_1() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper(); // Initialize ObjectMapper
-        MockitoAnnotations.openMocks(this);
 
         // Arrange
         JsonNode competencyArea = objectMapper.createObjectNode();
@@ -138,7 +144,7 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_createErrorResponse_1() {
-        CompetencyAreaServiceImpl service = new CompetencyAreaServiceImpl();
+        CompetencyAreaServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
         String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -155,7 +161,7 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_createErrorResponse_setsAllFieldsCorrectly() {
-        CompetencyAreaServiceImpl service = new CompetencyAreaServiceImpl();
+        CompetencyAreaServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
         String errorMessage = "Test error";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -174,7 +180,7 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_createSuccessResponse_1() {
-        CompetencyAreaServiceImpl service = new CompetencyAreaServiceImpl();
+        CompetencyAreaServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
 
         service.createSuccessResponse(response);
@@ -191,7 +197,6 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_deleteCompetencyArea_1() {
-        MockitoAnnotations.openMocks(this);
 
         String id = "COMAREA-000001";
         CompetencyAreaEntity mockEntity = new CompetencyAreaEntity();
@@ -238,7 +243,6 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_1() {
-        MockitoAnnotations.openMocks(this);
 
         Object requestPayload = new Object();
 
@@ -260,7 +264,7 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_2() {
-        CompetencyAreaServiceImpl competencyAreaService = new CompetencyAreaServiceImpl();
+        CompetencyAreaServiceImpl competencyAreaService = newUninitializedService();
         String result = competencyAreaService.generateRedisJwtTokenKey(null);
         assertEquals("", result);
     }
@@ -438,7 +442,7 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_readCompArea_emptyId() {
-        CompetencyAreaServiceImpl service = new CompetencyAreaServiceImpl();
+        CompetencyAreaServiceImpl service = newUninitializedService();
         String emptyId = "";
 
         CustomResponse response = service.readCompArea(emptyId);
@@ -454,7 +458,7 @@ class CompetencyAreaServiceImplTest {
      */
     @Test
     void test_readCompArea_emptyId_2() {
-        CompetencyAreaServiceImpl service = new CompetencyAreaServiceImpl();
+        CompetencyAreaServiceImpl service = newUninitializedService();
         CustomResponse response = service.readCompArea("");
 
         assertNotNull(response);

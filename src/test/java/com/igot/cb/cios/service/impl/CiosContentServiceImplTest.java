@@ -39,6 +39,8 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpEntity;
@@ -186,7 +188,6 @@ class CiosContentServiceImplTest {
      */
     @Test
     void test_fetchDataByContentId_3() {
-        MockitoAnnotations.openMocks(this);
 
         String contentId = "validContentId";
 
@@ -210,7 +211,7 @@ class CiosContentServiceImplTest {
      */
     @Test
     void test_fetchDataByContentId_emptyContentId() {
-        CiosContentServiceImpl service = new CiosContentServiceImpl();
+        CiosContentServiceImpl service = newUninitializedService();
 
         CustomException exception = assertThrows(CustomException.class, () -> {
             service.fetchDataByContentId("");
@@ -278,7 +279,6 @@ class CiosContentServiceImplTest {
      */
     @Test
     void test_fetchDataByExternalIdAndPartnerId_returnsCachedResponse(){
-        MockitoAnnotations.openMocks(this);
 
         String externalId = "test_external_id";
         String partnerId = "test_partner_id";
@@ -298,7 +298,7 @@ class CiosContentServiceImplTest {
      */
     @Test
     void test_generateId_1() {
-        CiosContentServiceImpl service = new CiosContentServiceImpl();
+        CiosContentServiceImpl service = newUninitializedService();
         String generatedId = service.generateId();
 
         assertNotNull(generatedId);
@@ -316,7 +316,7 @@ class CiosContentServiceImplTest {
      */
     @Test
     void test_generateId_ensureUniqueness() {
-        CiosContentServiceImpl service = new CiosContentServiceImpl();
+        CiosContentServiceImpl service = newUninitializedService();
         String id1 = service.generateId();
         String id2 = service.generateId();
         assertNotEquals("Generated IDs should be unique", id1, id2);
@@ -329,7 +329,6 @@ class CiosContentServiceImplTest {
      */
     @Test
     void test_onboardContent_2() {
-        MockitoAnnotations.openMocks(this);
 
         List<ObjectDto> dataList = new ArrayList<>();
         ObjectDto objectDto = new ObjectDto();
@@ -935,7 +934,7 @@ class CiosContentServiceImplTest {
 
     @Test
     void test_addSearchTags_contentNameNotInTags() throws Exception {
-        ciosContentService.objectMapper = realObjectMapper;
+        ReflectionTestUtils.setField(ciosContentService, "objectMapper", realObjectMapper);
         // Prepare input tags
         List<String> inputTags = Arrays.asList("tag1", "tag2");
 
@@ -968,7 +967,7 @@ class CiosContentServiceImplTest {
 
     @Test
     void test_addSearchTags_contentNameAlreadyInTags() throws Exception {
-        ciosContentService.objectMapper = realObjectMapper;
+        ReflectionTestUtils.setField(ciosContentService, "objectMapper", realObjectMapper);
         // content.name = "tag1" (already present in input tags, case insensitive)
         List<String> inputTags = Arrays.asList("tag1", "tag2");
 
@@ -997,7 +996,7 @@ class CiosContentServiceImplTest {
     @Test
     void test_addSearchTags_contentNameNull() throws Exception {
         // No content node or no content.name present
-        ciosContentService.objectMapper = realObjectMapper;
+        ReflectionTestUtils.setField(ciosContentService, "objectMapper", realObjectMapper);
         List<String> inputTags = Arrays.asList("tag1", "tag2");
 
         ObjectNode rootNode = realObjectMapper.createObjectNode();
@@ -1130,8 +1129,13 @@ class CiosContentServiceImplTest {
         assertDoesNotThrow(() -> method.invoke(service, "PARTNER001"));
     }
 
+    private static CiosContentServiceImpl newUninitializedService() {
+        Objenesis objenesis = new ObjenesisStd();
+        return objenesis.newInstance(CiosContentServiceImpl.class);
+    }
+
     private CiosContentServiceImpl prepareServiceWithMocks(JsonNode mockedNode) throws Exception {
-        CiosContentServiceImpl service = new CiosContentServiceImpl();
+        CiosContentServiceImpl service = newUninitializedService();
 
         ObjectMapper objectMapper = new ObjectMapper();
         ReflectionTestUtils.setField(service, "objectMapper", objectMapper);
@@ -1206,7 +1210,7 @@ class CiosContentServiceImplTest {
     @Test
     void test_deleteContent_success() {
         // Arrange
-        CiosContentServiceImpl service = new CiosContentServiceImpl();
+        CiosContentServiceImpl service = newUninitializedService();
 
         CiosRepository mockRepo = mock(CiosRepository.class);
         ReflectionTestUtils.setField(service, "ciosRepository", mockRepo);

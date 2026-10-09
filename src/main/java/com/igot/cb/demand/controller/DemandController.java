@@ -5,16 +5,16 @@ import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.demand.service.DemandService;
 import com.igot.cb.pores.util.Constants;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/demand")
+@RequiredArgsConstructor
 public class DemandController {
-  @Autowired
-  private DemandService demandService;
+  private final DemandService demandService;
 
   @PostMapping("/create")
   public ResponseEntity<CustomResponse> create(@RequestBody JsonNode demandsDetails,

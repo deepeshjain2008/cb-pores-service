@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
@@ -88,8 +90,11 @@ class CompetencySubThemeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        objectMapper = new ObjectMapper();
+    }
+
+    private static CompetencySubThemeServiceImpl newUninitializedService() {
+        Objenesis objenesis = new ObjenesisStd();
+        return objenesis.newInstance(CompetencySubThemeServiceImpl.class);
     }
 
     /**
@@ -113,7 +118,7 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_createErrorResponse_1() {
-        CompetencySubThemeServiceImpl service = new CompetencySubThemeServiceImpl();
+        CompetencySubThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
         String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -131,7 +136,7 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_createErrorResponse_setsAllFields() {
-        CompetencySubThemeServiceImpl service = new CompetencySubThemeServiceImpl();
+        CompetencySubThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
         String errorMessage = "Test error";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -150,7 +155,7 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_createSuccessResponse_1() {
-        CompetencySubThemeServiceImpl service = new CompetencySubThemeServiceImpl();
+        CompetencySubThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
 
         service.createSuccessResponse(response);
@@ -209,7 +214,6 @@ class CompetencySubThemeServiceImplTest {
 
     @Test
     void test_deleteCompetencySubTheme_nonExistentId() {
-        MockitoAnnotations.openMocks(this);
 
         String nonExistentId = "NON_EXISTENT_ID";
         when(competencySubThemeRepository.findByIdAndIsActive(nonExistentId, true)).thenReturn(Optional.empty());
@@ -227,7 +231,6 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_1() {
-        MockitoAnnotations.openMocks(this);
 
         // Arrange
         Object requestPayload = new Object();
@@ -253,7 +256,7 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_2() {
-        CompetencySubThemeServiceImpl service = new CompetencySubThemeServiceImpl();
+        CompetencySubThemeServiceImpl service = newUninitializedService();
         Object requestPayload = null;
         String result = service.generateRedisJwtTokenKey(requestPayload);
         assertEquals("", result, "Should return an empty string when requestPayload is null");
@@ -266,8 +269,8 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_nullInput() {
-        CompetencySubThemeServiceImpl service = new CompetencySubThemeServiceImpl();
-        service.objectMapper = new ObjectMapper();
+        CompetencySubThemeServiceImpl service = newUninitializedService();
+        ReflectionTestUtils.setField(service, "objectMapper", new ObjectMapper());
 
         String result = service.generateRedisJwtTokenKey(null);
 
@@ -330,7 +333,6 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_readCompSubTheme_3() {
-        MockitoAnnotations.openMocks(this);
 
         String id = "testId";
         CompetencySubThemeEntity entity = new CompetencySubThemeEntity();
@@ -357,7 +359,7 @@ class CompetencySubThemeServiceImplTest {
      */
     @Test
     void test_readCompSubTheme_emptyId() {
-        CompetencySubThemeServiceImpl service = new CompetencySubThemeServiceImpl();
+        CompetencySubThemeServiceImpl service = newUninitializedService();
         CustomResponse response = service.readCompSubTheme("");
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
