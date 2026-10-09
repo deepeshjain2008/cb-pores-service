@@ -14,6 +14,7 @@ import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.elasticsearch.dto.SearchResult;
 import com.igot.cb.pores.elasticsearch.service.EsUtilService;
 import com.igot.cb.pores.util.ApiResponse;
+import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
 import java.sql.Timestamp;
@@ -50,6 +51,9 @@ import static org.mockito.Mockito.when;
 class PlayListServiceImplTest {
 
     @Mock
+    private CbServerProperties cbServerProperties;
+
+    @Mock
     private EsUtilService esUtilService;
 
     @Mock
@@ -82,6 +86,7 @@ class PlayListServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.initMocks(this);
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     /**
@@ -353,6 +358,7 @@ class PlayListServiceImplTest {
         } catch (Exception e) {
             // Handle exception
         }
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
         String result = playListService.generateRedisJwtTokenKey(requestPayload);
 

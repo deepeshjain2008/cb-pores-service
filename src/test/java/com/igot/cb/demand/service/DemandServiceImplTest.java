@@ -120,6 +120,7 @@ class DemandServiceImplTest {
         ReflectionTestUtils.setField(demandService, "statusTransitionConfig", mock(StatusTransitionConfig.class));
 
         lenient().when(redisTemplateString.opsForValue()).thenReturn(valueOperationsString);
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("demand_search_result");
     }
 
 

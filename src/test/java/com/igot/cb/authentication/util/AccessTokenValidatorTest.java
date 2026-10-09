@@ -9,7 +9,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyWrapper;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.PublicKey;
@@ -37,7 +37,6 @@ class AccessTokenValidatorTest {
     @InjectMocks
     private AccessTokenValidator accessTokenValidator;
 
-    @Spy
     private AccessTokenValidator spyAccessTokenValidator;
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -56,6 +55,7 @@ class AccessTokenValidatorTest {
         invalidSignatureToken = generateToken("invalidSignatureUserId", Time.currentTime() + 1000, "expectedIssuer");
         invalidIssuerToken = generateToken("invalidIssuerUserId", Time.currentTime() + 1000, "invalidIssuer");
 
+        spyAccessTokenValidator = Mockito.spy(new AccessTokenValidator(keyManager));
     }
 
     @Test
