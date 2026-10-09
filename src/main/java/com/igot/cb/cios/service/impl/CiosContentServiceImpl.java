@@ -30,9 +30,9 @@ import com.igot.cb.pores.util.PayloadValidation;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
@@ -50,44 +50,34 @@ import org.springframework.util.CollectionUtils;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class CiosContentServiceImpl implements CiosContentService {
     private static long environmentId = 10000000;
     private static String shardId = "1";
     private static AtomicInteger aInteger = new AtomicInteger(1);
 
-    @Autowired
-    private CiosRepository ciosRepository;
-    @Autowired
-    ObjectMapper objectMapper;
-    @Autowired
-    EsUtilService esUtilService;
+    private final CiosRepository ciosRepository;
+    private final ObjectMapper objectMapper;
+    private final EsUtilService esUtilService;
 
-    @Autowired
-    private PayloadValidation payloadValidation;
+    private final PayloadValidation payloadValidation;
 
-    @Autowired
-    private RedisTemplate<String, SearchResult> redisTemplate;
+    private final RedisTemplate<String, SearchResult> redisTemplate;
 
     @Value("${search.result.redis.ttl}")
     private long searchResultRedisTtl;
 
-    @Autowired
-    private CbServerProperties cbServerProperties;
+    private final CbServerProperties cbServerProperties;
 
-    @Autowired
-    private CacheService cacheService;
+    private final CacheService cacheService;
 
-    @Autowired
-    private CiosRequestPayloadValidation ciosRequestPayloadValidation;
+    private final CiosRequestPayloadValidation ciosRequestPayloadValidation;
 
-    @Autowired
-    private ContentPartnerRepository contentPartnerRepository;
+    private final ContentPartnerRepository contentPartnerRepository;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
-    @Autowired
-    private ContentPartnerService contentPartnerService;
+    private final ContentPartnerService contentPartnerService;
 
     public String generateId() {
         long env = environmentId / 10000000;

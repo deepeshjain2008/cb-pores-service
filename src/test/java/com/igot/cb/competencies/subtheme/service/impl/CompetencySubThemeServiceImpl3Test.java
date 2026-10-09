@@ -27,6 +27,8 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
@@ -71,7 +73,8 @@ class CompetencySubThemeServiceImpl3Test {
 
     @BeforeEach
     void setUp() {
-        service = new CompetencySubThemeServiceImpl();
+        Objenesis objenesis = new ObjenesisStd();
+        service = objenesis.newInstance(CompetencySubThemeServiceImpl.class);
         ReflectionTestUtils.setField(service, "objectMapper", new ObjectMapper());
         ReflectionTestUtils.setField(service, "searchResultRedisTtl", 3600L);
         // Set other mocks

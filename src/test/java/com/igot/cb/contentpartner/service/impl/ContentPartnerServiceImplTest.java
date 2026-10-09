@@ -317,7 +317,6 @@ class ContentPartnerServiceImplTest {
      */
     @Test
     void test_getContentDetailsByPartnerCode_whenCacheExists(){
-        MockitoAnnotations.openMocks(this);
 
         String cachedJson = "{\"key\":\"value\"}";
         Map<String, Object> cachedData = new HashMap<>();

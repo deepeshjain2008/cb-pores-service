@@ -5,7 +5,7 @@ import com.igot.cb.interest.service.InterestService;
 import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.util.Constants;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/interest")
+@RequiredArgsConstructor
 public class InterestController {
 
-  @Autowired
-  private InterestService interestService;
+  private final InterestService interestService;
 
   @PostMapping("/v1/create")
   public ResponseEntity<CustomResponse> create(@RequestBody JsonNode interestDetails) {

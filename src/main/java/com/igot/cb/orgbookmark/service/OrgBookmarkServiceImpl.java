@@ -27,6 +27,7 @@ import com.igot.cb.pores.util.Constants;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -34,7 +35,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -53,23 +53,16 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class OrgBookmarkServiceImpl implements OrgBookmarkService {
-    @Autowired
-    private EsUtilService esUtilService;
-    @Autowired
-    private OrgBookmarkRepository orgBookmarkRepository;
-    @Autowired
-    private CacheService cacheService;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private RedisTemplate<String, SearchResult> redisTemplate;
-    @Autowired
-    private CbServerProperties cbServerProperties;
-    @Autowired
-    private AccessTokenValidator accessTokenValidator;
-    @Autowired
-    private OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
+    private final EsUtilService esUtilService;
+    private final OrgBookmarkRepository orgBookmarkRepository;
+    private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, SearchResult> redisTemplate;
+    private final CbServerProperties cbServerProperties;
+    private final AccessTokenValidator accessTokenValidator;
+    private final OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
 
     private Logger logger = LoggerFactory.getLogger(OrgBookmarkServiceImpl.class);
 

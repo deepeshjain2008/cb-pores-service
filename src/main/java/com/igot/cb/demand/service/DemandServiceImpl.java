@@ -53,46 +53,55 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Slf4j
 public class DemandServiceImpl implements DemandService {
-    @Autowired
-    private EsUtilService esUtilService;
-    @Autowired
-    private DemandRepository demandRepository;
-    @Autowired
-    private CacheService cacheService;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private RedisTemplate<String, SearchResult> redisTemplate;
-    @Autowired
-    @Qualifier("redisTemplate")
-    private RedisTemplate<String, String> redisTemplateString;
+    private final EsUtilService esUtilService;
+    private final DemandRepository demandRepository;
+    private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, SearchResult> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplateString;
     private Logger logger = LoggerFactory.getLogger(DemandServiceImpl.class);
-    @Autowired
-    private AccessTokenValidator accessTokenValidator;
-    @Autowired
-    private CbServerProperties cbServerProperties;
+    private final AccessTokenValidator accessTokenValidator;
+    private final CbServerProperties cbServerProperties;
     private StatusTransitionConfig statusTransitionConfig;
-
-    @Autowired
-    public DemandServiceImpl() throws IOException {
-        this.statusTransitionConfig = new StatusTransitionConfig(Constants.STATUS_TRANSITION_PATH);
-    }
-
-    @Autowired
-    private CassandraOperation cassandraOperation;
+    private final CassandraOperation cassandraOperation;
     @Value("${search.result.redis.ttl}")
     private long searchResultRedisTtl;
 
-    @Autowired
-    private Producer kafkaProducer;
+    private final Producer kafkaProducer;
 
-    @Autowired
-    private CbServerProperties propertiesConfig;
+    private final CbServerProperties propertiesConfig;
 
-    @Autowired
-    private RequestHandlerServiceImpl requestHandlerService;
+    private final RequestHandlerServiceImpl requestHandlerService;
 
     private static final Random RANDOM = new Random();
+
+    @Autowired
+    public DemandServiceImpl(EsUtilService esUtilService,
+                              DemandRepository demandRepository,
+                              CacheService cacheService,
+                              ObjectMapper objectMapper,
+                              RedisTemplate<String, SearchResult> redisTemplate,
+                              @Qualifier("redisTemplate") RedisTemplate<String, String> redisTemplateString,
+                              AccessTokenValidator accessTokenValidator,
+                              CbServerProperties cbServerProperties,
+                              CassandraOperation cassandraOperation,
+                              Producer kafkaProducer,
+                              CbServerProperties propertiesConfig,
+                              RequestHandlerServiceImpl requestHandlerService) throws IOException {
+        this.esUtilService = esUtilService;
+        this.demandRepository = demandRepository;
+        this.cacheService = cacheService;
+        this.objectMapper = objectMapper;
+        this.redisTemplate = redisTemplate;
+        this.redisTemplateString = redisTemplateString;
+        this.accessTokenValidator = accessTokenValidator;
+        this.cbServerProperties = cbServerProperties;
+        this.cassandraOperation = cassandraOperation;
+        this.kafkaProducer = kafkaProducer;
+        this.propertiesConfig = propertiesConfig;
+        this.requestHandlerService = requestHandlerService;
+        this.statusTransitionConfig = new StatusTransitionConfig(Constants.STATUS_TRANSITION_PATH);
+    }
 
     @Override
     public CustomResponse createDemand(JsonNode demandDetails, String token, String rootOrgId) {

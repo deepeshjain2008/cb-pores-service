@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.igot.cb.demand.service.DemandServiceImpl;
 import com.igot.cb.pores.util.Constants;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -22,11 +22,11 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 @Service
+@RequiredArgsConstructor
 public class RequestHandlerServiceImpl {
     private Logger log = LoggerFactory.getLogger(DemandServiceImpl.class);
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     public Map<String, Object> fetchResultUsingPost(String uri, Object request, Map<String, String> headersValues) {
         ObjectMapper mapper = new ObjectMapper();

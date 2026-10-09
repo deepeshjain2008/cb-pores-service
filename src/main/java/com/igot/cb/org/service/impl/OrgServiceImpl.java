@@ -12,12 +12,12 @@ import com.igot.cb.pores.util.*;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
 import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,34 +25,24 @@ import java.util.*;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class OrgServiceImpl implements OrgService {
 
-    @Autowired
-    PayloadValidation payloadValidation;
+    private final PayloadValidation payloadValidation;
 
-    @Autowired
-    CassandraOperation cassandraOperation;
+    private final CassandraOperation cassandraOperation;
 
-    @Autowired
-    OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
+    private final OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
-    @Autowired
-    CbServerProperties cbServerProperties;
+    private final CbServerProperties cbServerProperties;
 
-    @Autowired
-    AccessTokenValidator accessTokenValidator;
+    private final AccessTokenValidator accessTokenValidator;
 
-    @Autowired
-    DemandService demandService;
+    private final DemandService demandService;
 
-    @Autowired
-    Producer kafkaProducer;
+    private final Producer kafkaProducer;
 
-    @Autowired
-    RequestHandlerServiceImpl requestHandlerService;
-
-    @Autowired
-    CbServerProperties propertiesConfig;
+    private final RequestHandlerServiceImpl requestHandlerService;
 
     @Override
     public ApiResponse readFramework(String frameworkName, String orgId, String termName, String userAuthToken) {
@@ -187,7 +177,7 @@ public class OrgServiceImpl implements OrgService {
         Map<String, String> header = new HashMap<>();
         log.info("isSpvRequest started for userId: {}", userId);
         Map<String, Object> readData = (Map<String, Object>) requestHandlerService
-                .fetchUsingGetWithHeadersProfile(propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId,
+                .fetchUsingGetWithHeadersProfile(cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId,
                         header);
         Map<String, Object> result = (Map<String, Object>) readData.get(Constants.RESULT);
         Map<String, Object> responseMap = (Map<String, Object>) result.get(Constants.RESPONSE);

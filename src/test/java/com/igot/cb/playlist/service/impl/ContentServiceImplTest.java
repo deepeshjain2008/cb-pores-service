@@ -159,7 +159,6 @@ class ContentServiceImplTest {
      */
     @Test
     public void test_fetchResult_whenDebugLoggingEnabled() {
-        MockitoAnnotations.openMocks(this);
 
         String testUri = "http://test.com/api";
         Map<String, Object> expectedResponse = Map.of("key", "value");
@@ -401,7 +400,6 @@ class ContentServiceImplTest {
      */
     @Test
     public void test_readContent_withNonEmptyFieldsAndSuccessfulResponse() {
-        MockitoAnnotations.openMocks(this);
 
         String contentId = "testContentId";
         List<String> fields = Arrays.asList("field1", "field2");

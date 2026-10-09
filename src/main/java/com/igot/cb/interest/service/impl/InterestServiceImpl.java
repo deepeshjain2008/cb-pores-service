@@ -28,13 +28,13 @@ import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -47,47 +47,36 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class InterestServiceImpl implements InterestService {
 
-  @Autowired
-  private PayloadValidation payloadValidation;
+  private final PayloadValidation payloadValidation;
 
-  @Autowired
-  private InterestRepository interestRepository;
+  private final InterestRepository interestRepository;
 
-  @Autowired
-  private DemandRepository demandRepository;
+  private final DemandRepository demandRepository;
 
-  @Autowired
-  private EsUtilService esUtilService;
+  private final EsUtilService esUtilService;
 
-  @Autowired
-  private ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
-  @Autowired
-  private CacheService cacheService;
+  private final CacheService cacheService;
 
-  @Autowired
-  private RedisTemplate<String, SearchResult> redisTemplate;
-  @Autowired
-  private CbServerProperties cbServerProperties;
+  private final RedisTemplate<String, SearchResult> redisTemplate;
+  private final CbServerProperties cbServerProperties;
 
   private Logger logger = LoggerFactory.getLogger(InterestServiceImpl.class);
 
   @Value("${search.result.redis.ttl}")
   private long searchResultRedisTtl;
 
-  @Autowired
-  private CassandraOperation cassandraOperation;
+  private final CassandraOperation cassandraOperation;
 
-  @Autowired
-  private AccessTokenValidator accessTokenValidator;
+  private final AccessTokenValidator accessTokenValidator;
 
-  @Autowired
-  private DemandServiceImpl demandService;
+  private final DemandServiceImpl demandService;
 
-  @Autowired
-  private Producer kafkaProducer;
+  private final Producer kafkaProducer;
   @Override
   public CustomResponse createInterest(JsonNode interestDetails) {
     log.info("InterestServiceImpl::createInterest:entered the method: " + interestDetails);

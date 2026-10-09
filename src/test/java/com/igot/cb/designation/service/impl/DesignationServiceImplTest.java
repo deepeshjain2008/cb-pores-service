@@ -89,9 +89,6 @@ class DesignationServiceImplTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
-
-    @Mock
     private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
     @Mock
@@ -112,7 +109,6 @@ class DesignationServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.initMocks(this);
         when(cbServerProperties.getDesignationValidationRegex())
                 .thenReturn("^[a-zA-Z0-9 ()&/,+-]*$");
         when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
@@ -214,7 +210,6 @@ class DesignationServiceImplTest {
      */
     @Test
     void test_createTerm_1() {
-        MockitoAnnotations.openMocks(this);
 
         // Prepare test data
         ObjectMapper realObjectMapper = new ObjectMapper();
@@ -1004,7 +999,6 @@ class DesignationServiceImplTest {
      */
     @Test
     void test_updateDesignation_2() {
-        MockitoAnnotations.openMocks(this);
 
         // Prepare test data
         ObjectNode updateDesignationDetails = new ObjectMapper().createObjectNode();
@@ -1230,7 +1224,7 @@ class DesignationServiceImplTest {
         when(cbServerProperties.getElasticDesignationJsonPath()).thenReturn("elasticPath");
 
         // Use real ObjectMapper for internal node updates
-        designationService.objectMapper = realObjectMapper;
+        ReflectionTestUtils.setField(designationService, "objectMapper", realObjectMapper);
 
         // Call the method
         CustomResponse response = designationService.createDesignation(designationDetails);

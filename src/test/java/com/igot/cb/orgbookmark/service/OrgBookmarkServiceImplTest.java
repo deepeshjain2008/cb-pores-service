@@ -66,7 +66,6 @@ class OrgBookmarkServiceImplTest {
 
     @BeforeEach
     void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
         ObjectMapper mapper = new ObjectMapper();
         String json = """
         {

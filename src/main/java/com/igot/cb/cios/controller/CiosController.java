@@ -6,8 +6,8 @@ import com.igot.cb.cios.dto.ObjectDto;
 import com.igot.cb.cios.service.CiosContentService;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.elasticsearch.dto.SearchResult;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +17,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/cios")
 @Slf4j
+@RequiredArgsConstructor
 public class CiosController {
-    @Autowired
-    CiosContentService ciosContentService;
+    private final CiosContentService ciosContentService;
 
     @PostMapping(value = "/v1/onboardContent")
     public ResponseEntity<Object> onboardContent(@RequestBody List<ObjectDto> objectDtos) {

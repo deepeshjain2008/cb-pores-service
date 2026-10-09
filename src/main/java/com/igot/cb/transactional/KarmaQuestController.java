@@ -3,7 +3,7 @@ package com.igot.cb.transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.igot.cb.demandinterest.service.KarmaQuestServiceImpl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/karmaquests/interest")
+@RequiredArgsConstructor
 public class KarmaQuestController {
-    @Autowired
-    KarmaQuestServiceImpl serviceClass;
+    final KarmaQuestServiceImpl serviceClass;
 
     @GetMapping("/get/{interestId}")
     public Object processInterests(@PathVariable String interestId) {

@@ -20,9 +20,9 @@ import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -36,31 +36,23 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ContentPartnerServiceImpl implements ContentPartnerService {
 
-    @Autowired
-    private EsUtilService esUtilService;
+    private final EsUtilService esUtilService;
 
-    @Autowired
-    private ContentPartnerRepository entityRepository;
-    @Autowired
-    private CacheService cacheService;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private CbServerProperties cbServerProperties;
+    private final ContentPartnerRepository entityRepository;
+    private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
+    private final CbServerProperties cbServerProperties;
 
-    @Autowired
-    private PayloadValidation payloadValidation;
+    private final PayloadValidation payloadValidation;
 
-    @Autowired
-    private RedisTemplate<String, SearchResult> redisTemplate;
+    private final RedisTemplate<String, SearchResult> redisTemplate;
 
-    @Autowired
-    private Producer kafkaProducer;
+    private final Producer kafkaProducer;
 
-    @Autowired
-    private SecureRandom secureRandom;
+    private final SecureRandom secureRandom;
 
     @Value("${search.result.redis.ttl}")
     private long searchResultRedisTtl;

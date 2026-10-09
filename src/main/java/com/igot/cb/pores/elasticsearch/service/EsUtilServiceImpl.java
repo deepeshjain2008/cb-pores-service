@@ -51,16 +51,17 @@ public class EsUtilServiceImpl implements EsUtilService {
     private final EsConfig esConfig;
     private final ElasticsearchClient elasticsearchClient;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
+
+    private final CbServerProperties cbServerProperties;
 
     @Autowired
-    private CbServerProperties cbServerProperties;
-
-    @Autowired
-    public EsUtilServiceImpl(ElasticsearchClient elasticsearchClient, EsConfig esConnection) {
+    public EsUtilServiceImpl(ElasticsearchClient elasticsearchClient, EsConfig esConnection,
+                              ObjectMapper objectMapper, CbServerProperties cbServerProperties) {
         this.elasticsearchClient = elasticsearchClient;
         this.esConfig = esConnection;
+        this.objectMapper = objectMapper;
+        this.cbServerProperties = cbServerProperties;
     }
 
 

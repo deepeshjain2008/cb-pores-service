@@ -85,7 +85,6 @@ class PlayListServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.initMocks(this);
         when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
@@ -162,7 +161,6 @@ class PlayListServiceImplTest {
      */
     @Test
     void test_createPlayList_existingPlaylist() {
-        MockitoAnnotations.openMocks(this);
 
         // Arrange
         ObjectMapper  objectMapper = new ObjectMapper();
@@ -348,7 +346,6 @@ class PlayListServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_1() {
-        MockitoAnnotations.initMocks(this);
 
         Object requestPayload = new Object();
         String jsonString = "{\"key\":\"value\"}";

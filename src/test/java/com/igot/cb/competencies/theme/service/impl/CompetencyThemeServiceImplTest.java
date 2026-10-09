@@ -20,7 +20,6 @@ import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.FileProcessService;
 import com.igot.cb.pores.util.PayloadValidation;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -37,10 +36,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -93,9 +95,13 @@ class CompetencyThemeServiceImplTest {
     @Mock
     private ValueOperations<String, SearchResult> valueOperations;
 
+    private static CompetencyThemeServiceImpl newUninitializedService() {
+        Objenesis objenesis = new ObjenesisStd();
+        return objenesis.newInstance(CompetencyThemeServiceImpl.class);
+    }
+
     @BeforeEach
     void setup() {
-        MockitoAnnotations.openMocks(this);
         lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
@@ -289,7 +295,7 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_createErrorResponse_1() {
-        CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
+        CompetencyThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
         String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -308,7 +314,7 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_createErrorResponse_setsAllFields() {
-        CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
+        CompetencyThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
         String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -327,7 +333,7 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_createSuccessResponse_1() {
-        CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
+        CompetencyThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
 
         service.createSuccessResponse(response);
@@ -371,7 +377,6 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_createTerm_2() {
-        MockitoAnnotations.openMocks(this);
 
         JsonNode request = mock(JsonNode.class);
         CompetencyThemeEntity competencyThemeEntity = mock(CompetencyThemeEntity.class);
@@ -618,9 +623,9 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_1() {
-        CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
+        CompetencyThemeServiceImpl service = newUninitializedService();
         ObjectMapper objectMapper = mock(ObjectMapper.class);
-        service.objectMapper = objectMapper;
+        ReflectionTestUtils.setField(service, "objectMapper", objectMapper);
         CbServerProperties cbServerProperties = mock(CbServerProperties.class);
         ReflectionTestUtils.setField(service, "cbServerProperties", cbServerProperties);
 
@@ -657,7 +662,7 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_withNullPayload() {
-        CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
+        CompetencyThemeServiceImpl service = newUninitializedService();
         String result = service.generateRedisJwtTokenKey(null);
         assertEquals("", result, "Should return an empty string when requestPayload is null");
     }
@@ -1092,7 +1097,7 @@ class CompetencyThemeServiceImplTest {
     */
     @Test
     void test_readCompTheme_emptyId() {
-        CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
+        CompetencyThemeServiceImpl service = newUninitializedService();
         CustomResponse response = service.readCompTheme("");
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
@@ -1269,7 +1274,6 @@ class CompetencyThemeServiceImplTest {
      */
     @Test
     void test_searchCompTheme_3() throws Exception {
-        MockitoAnnotations.openMocks(this);
 
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();

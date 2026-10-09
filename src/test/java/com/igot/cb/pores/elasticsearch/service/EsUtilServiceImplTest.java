@@ -66,7 +66,6 @@ class EsUtilServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         sampleCriteria = new SearchCriteria();
         sampleCriteria.setPageNumber(0);
         sampleCriteria.setPageSize(2);

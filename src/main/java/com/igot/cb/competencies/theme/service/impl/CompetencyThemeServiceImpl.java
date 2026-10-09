@@ -37,9 +37,9 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -48,42 +48,33 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class CompetencyThemeServiceImpl implements CompetencyThemeService {
 
-  @Autowired
-  ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
-  @Autowired
-  private PayloadValidation payloadValidation;
+  private final PayloadValidation payloadValidation;
 
-  @Autowired
-  private EsUtilService esUtilService;
+  private final EsUtilService esUtilService;
 
-  @Autowired
-  private CacheService cacheService;
+  private final CacheService cacheService;
 
-  @Autowired
-  private CbServerProperties cbServerProperties;
+  private final CbServerProperties cbServerProperties;
 
-  @Autowired
-  private FileProcessService fileProcessService;
+  private final FileProcessService fileProcessService;
 
-  @Autowired
-  private AccessTokenValidator accessTokenValidator;
+  private final AccessTokenValidator accessTokenValidator;
 
   @Value("${search.result.redis.ttl}")
   private long searchResultRedisTtl;
 
-  @Autowired
-  private RedisTemplate<String, SearchResult> redisTemplate;
+  private final RedisTemplate<String, SearchResult> redisTemplate;
 
-  @Autowired
-  private CompetencyThemeRepository competencyThemeRepository;
+  private final CompetencyThemeRepository competencyThemeRepository;
 
-  private @Autowired OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
+  private final OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
-  @Autowired
-  private DesignationService designationService;
+  private final DesignationService designationService;
 
   @Override
   public void loadCompetencyTheme(MultipartFile file, String token) {

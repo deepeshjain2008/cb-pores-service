@@ -21,7 +21,6 @@ import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -39,8 +38,7 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
     private final AccessTokenValidator accessTokenValidator;
     private final ContentPartnerService contentPartnerService;
 
-    @Autowired
-    private Producer kafkaProducer;
+    private final Producer kafkaProducer;
 
     public ContentPartnerRegistrationServiceImpl(
             PayloadValidation payloadValidation,
@@ -49,7 +47,8 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
             CbServerProperties cbServerProperties,
             EsUtilService esUtilService,
             AccessTokenValidator accessTokenValidator,
-            ContentPartnerService contentPartnerService
+            ContentPartnerService contentPartnerService,
+            Producer kafkaProducer
     ) {
         this.payloadValidation = payloadValidation;
         this.registrationRepository = registrationRepository;
@@ -58,6 +57,7 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
         this.esUtilService = esUtilService;
         this.accessTokenValidator=accessTokenValidator;
         this.contentPartnerService = contentPartnerService;
+        this.kafkaProducer = kafkaProducer;
     }
 
     @Override

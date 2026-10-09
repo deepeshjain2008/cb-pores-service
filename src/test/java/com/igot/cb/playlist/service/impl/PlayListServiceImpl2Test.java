@@ -23,8 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
 
@@ -85,7 +89,9 @@ class PlayListServiceImpl2Test {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        playListService = new PlayListServiceImpl();
+        Objenesis objenesis = new ObjenesisStd();
+        playListService = objenesis.newInstance(PlayListServiceImpl.class);
+        ReflectionTestUtils.setField(playListService, "logger", LoggerFactory.getLogger(PlayListServiceImpl.class));
         injectField("objectMapper", objectMapper);
         injectField("playListRepository", playListRepository);
         injectField("redisCacheMngr", redisCacheMngr);

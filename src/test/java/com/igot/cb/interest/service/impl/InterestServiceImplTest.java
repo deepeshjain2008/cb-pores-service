@@ -742,7 +742,6 @@ class InterestServiceImplTest {
      */
     @Test
     void test_generateRedisJwtTokenKey_whenRequestPayloadNotNull() throws Exception {
-        MockitoAnnotations.openMocks(this);
 
         // Arrange
         Object requestPayload = new Object();
@@ -786,7 +785,6 @@ class InterestServiceImplTest {
      */
     @Test
     void test_read_3() {
-        MockitoAnnotations.openMocks(this);
 
         String id = "testId";
         Interests interest = new Interests();
