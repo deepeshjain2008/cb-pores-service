@@ -21,8 +21,12 @@ import java.util.Map;
 @Component
 public class AccessTokenValidator {
 
+    private final KeyManager keyManager;
+
     @Autowired
-    KeyManager keyManager;
+    public AccessTokenValidator(KeyManager keyManager) {
+        this.keyManager = keyManager;
+    }
 
     private static Logger logger = LoggerFactory.getLogger(AccessTokenValidator.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();

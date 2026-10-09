@@ -90,6 +90,7 @@ class CompetencySubThemeServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     /**
@@ -238,6 +239,7 @@ class CompetencySubThemeServiceImplTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
         // Act
         String result = competencySubThemeService.generateRedisJwtTokenKey(requestPayload);

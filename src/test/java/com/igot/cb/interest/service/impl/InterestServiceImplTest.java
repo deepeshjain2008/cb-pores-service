@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -84,6 +85,11 @@ class InterestServiceImplTest {
 
     @Mock
     private ValueOperations<String, SearchResult> valueOperations;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+    }
 
     /**
      * Test case for assignInterestToDemand method when the user token is invalid.
@@ -741,14 +747,16 @@ class InterestServiceImplTest {
         // Arrange
         Object requestPayload = new Object();
         String serializedPayload = "serialized_payload";
+        String jwtSecretKey = "test_secret_key";
         when(objectMapper.writeValueAsString(requestPayload)).thenReturn(serializedPayload);
+        when(cbServerProperties.getJwtSecretKey()).thenReturn(jwtSecretKey);
 
         // Act
         String result = interestService.generateRedisJwtTokenKey(requestPayload);
 
         // Assert
         assertNotNull(result);
-        JWT.require(Algorithm.HMAC256(Constants.JWT_SECRET_KEY))
+        JWT.require(Algorithm.HMAC256(jwtSecretKey))
            .build()
            .verify(result);
     }

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -81,6 +82,11 @@ class CompetencyAreaServiceImplTest {
     @Mock
     private MultipartFile multipartFile;
     private static final String TEST_ID = "COMAREA-000001";
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+    }
 
     /**
      * Test case for createCompArea method when index is present, data is not empty, and user is unauthorized.

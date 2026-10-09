@@ -20,6 +20,7 @@ import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.FileProcessService;
 import com.igot.cb.pores.util.PayloadValidation;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -95,6 +96,7 @@ class CompetencyThemeServiceImplTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
+        lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
 
     /**
@@ -619,12 +621,15 @@ class CompetencyThemeServiceImplTest {
         CompetencyThemeServiceImpl service = new CompetencyThemeServiceImpl();
         ObjectMapper objectMapper = mock(ObjectMapper.class);
         service.objectMapper = objectMapper;
+        CbServerProperties cbServerProperties = mock(CbServerProperties.class);
+        ReflectionTestUtils.setField(service, "cbServerProperties", cbServerProperties);
 
         Object requestPayload = new Object();
         String reqJsonString = "{\"key\":\"value\"}";
 
         try {
             when(objectMapper.writeValueAsString(requestPayload)).thenReturn(reqJsonString);
+            when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
 
             String result = service.generateRedisJwtTokenKey(requestPayload);
 
@@ -1270,6 +1275,7 @@ class CompetencyThemeServiceImplTest {
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearchString");
 
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(null);
 
