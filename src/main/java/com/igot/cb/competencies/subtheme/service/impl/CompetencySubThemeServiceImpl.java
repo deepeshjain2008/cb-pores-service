@@ -492,77 +492,20 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
       String parentCategory = additionalProperties.path(Constants.PARENT_CATEGORY).asText();
       String termCode = additionalProperties.path(Constants.PREV_TERM_CODE).asText();
       Optional<CompetencySubThemeEntity> designationEntity = competencySubThemeRepository.findByIdAndIsActive(ref_Id, Boolean.TRUE);
-      if (designationEntity.isPresent()) {
-        CompetencySubThemeEntity designation = designationEntity.get();
-        if (designation.getIsActive()) {
-          ApiResponse readResponse = designationService.frameworkRead(framework,parentCategory,termCode,ref_Id);
-          if (readResponse == null) {
-            response.getParams().setErr("Failed to validate term exists or not.");
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-            response.getParams().setStatus(Constants.FAILED);
-          } else if (HttpStatus.NOT_FOUND.equals(readResponse.getResponseCode())) {
-            Map<String, Object> reqBody = new HashMap<>();
-            request.fields().forEachRemaining(entry -> reqBody.put(entry.getKey(), toJavaObject(entry.getValue())));
-            Map<String, Object> termReq = new HashMap<String, Object>();
-            termReq.put(Constants.TERM, reqBody);
-            Map<String, Object> createReq = new HashMap<String, Object>();
-            createReq.put(Constants.REQUEST, termReq);
-            StringBuilder strUrl = new StringBuilder(cbServerProperties.getKnowledgeMS());
-            strUrl.append(cbServerProperties.getOdcsTermCrete()).append("?framework=")
-                    .append(framework).append("&category=")
-                    .append(category);
-            Map<String, Object> termResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
-                    createReq);
-            if (termResponse != null
-                    && Constants.OK.equalsIgnoreCase((String) termResponse.get(Constants.RESPONSE_CODE))) {
-              Map<String, Object> resultMap = (Map<String, Object>) termResponse.get(Constants.RESULT);
-              List<String> termIdentifier = (List<String>) resultMap.getOrDefault(Constants.NODE_ID, "");
-              log.info("Created term successfully with name: " + ref_Id);
-              log.info("termIdentifier : " + termIdentifier);
-              Map<String, Object> reqBodyMap = new HashMap<>();
-              reqBodyMap.put(Constants.ID, ref_Id);
-              reqBodyMap.put(Constants.TITLE, name);
-              reqBodyMap.put(Constants.REF_NODES, termIdentifier);
-              CustomResponse desgResponse = updateCompSubTheme(objectMapper.valueToTree(reqBodyMap));
-              if (desgResponse.getResponseCode() != HttpStatus.OK) {
-                log.error("Failed to update term: " + response.getParams().getErr());
-                response.getParams().setErr("Failed to update term.");
-                response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-                response.getParams().setStatus(Constants.FAILED);
-              } else {
-                response.getResult().put(Constants.NODE_ID, termIdentifier);
-              }
-            } else {
-              log.error("Failed to create the term with name: " + ref_Id);
-              response.getParams().setErr("Failed to create the term");
-              response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-              response.getParams().setStatus(Constants.FAILED);
-            }
-          } else if (HttpStatus.CONFLICT.equals(readResponse.getResponseCode())) {
-            String errMsg = Constants.TERM_CREATION_NOT_POSSIBLE + ref_Id;
-            log.error(errMsg);
-            response.getParams().setErr(errMsg);
-            response.setResponseCode(HttpStatus.BAD_REQUEST);
-            response.getParams().setStatus(Constants.FAILED);
-          } else {
-            log.error("Failed to create the term with name: " + ref_Id);
-            response.getParams().setErr("Failed to create.");
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-            response.getParams().setStatus(Constants.FAILED);
-          }
-        } else {
-          //if desg. is not active.
-          log.error("Failed to create term exists with name: " + ref_Id);
-          response.getParams().setErr("Failed to create term.");
-          response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-          response.getParams().setStatus(Constants.FAILED);
-        }
-      } else {
+      if (designationEntity.isEmpty()) {
         log.error("Failed to validate Term exists with name: " + ref_Id);
-        response.getParams().setErr("Term Not Exist.");
-        response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        response.getParams().setStatus(Constants.FAILED);
+        setTermFailure(response, "Term Not Exist.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return response;
       }
+      CompetencySubThemeEntity designation = designationEntity.get();
+      if (!designation.getIsActive()) {
+        //if desg. is not active.
+        log.error("Failed to create term exists with name: " + ref_Id);
+        setTermFailure(response, "Failed to create term.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return response;
+      }
+      ApiResponse readResponse = designationService.frameworkRead(framework, parentCategory, termCode, ref_Id);
+      handleTermReadResponse(response, readResponse, request, name, ref_Id, framework, category);
     } catch (CustomException e) {
       response.getParams().setErr(e.getMessage());
       response.setResponseCode(HttpStatus.BAD_REQUEST);
@@ -570,6 +513,66 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
       log.error("Payload validation failed: " + e.getMessage());
     }
     return response;
+  }
+
+  private void setTermFailure(ApiResponse response, String errMsg, HttpStatus status) {
+    response.getParams().setErr(errMsg);
+    response.setResponseCode(status);
+    response.getParams().setStatus(Constants.FAILED);
+  }
+
+  private void handleTermReadResponse(ApiResponse response, ApiResponse readResponse, JsonNode request,
+          String name, String ref_Id, String framework, String category) {
+    if (readResponse == null) {
+      setTermFailure(response, "Failed to validate term exists or not.", HttpStatus.INTERNAL_SERVER_ERROR);
+    } else if (HttpStatus.NOT_FOUND.equals(readResponse.getResponseCode())) {
+      createTermViaOdcs(response, request, name, ref_Id, framework, category);
+    } else if (HttpStatus.CONFLICT.equals(readResponse.getResponseCode())) {
+      String errMsg = Constants.TERM_CREATION_NOT_POSSIBLE + ref_Id;
+      log.error(errMsg);
+      setTermFailure(response, errMsg, HttpStatus.BAD_REQUEST);
+    } else {
+      log.error("Failed to create the term with name: " + ref_Id);
+      setTermFailure(response, "Failed to create.", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void createTermViaOdcs(ApiResponse response, JsonNode request, String name, String ref_Id,
+          String framework, String category) {
+    Map<String, Object> reqBody = new HashMap<>();
+    request.fields().forEachRemaining(entry -> reqBody.put(entry.getKey(), toJavaObject(entry.getValue())));
+    Map<String, Object> termReq = new HashMap<String, Object>();
+    termReq.put(Constants.TERM, reqBody);
+    Map<String, Object> createReq = new HashMap<String, Object>();
+    createReq.put(Constants.REQUEST, termReq);
+    StringBuilder strUrl = new StringBuilder(cbServerProperties.getKnowledgeMS());
+    strUrl.append(cbServerProperties.getOdcsTermCrete()).append("?framework=")
+            .append(framework).append("&category=")
+            .append(category);
+    Map<String, Object> termResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
+            createReq);
+    if (termResponse == null
+            || !Constants.OK.equalsIgnoreCase((String) termResponse.get(Constants.RESPONSE_CODE))) {
+      log.error("Failed to create the term with name: " + ref_Id);
+      setTermFailure(response, "Failed to create the term", HttpStatus.INTERNAL_SERVER_ERROR);
+      return;
+    }
+    Map<String, Object> resultMap = (Map<String, Object>) termResponse.get(Constants.RESULT);
+    List<String> termIdentifier = (List<String>) resultMap.getOrDefault(Constants.NODE_ID, "");
+    log.info("Created term successfully with name: " + ref_Id);
+    log.info("termIdentifier : " + termIdentifier);
+    Map<String, Object> reqBodyMap = new HashMap<>();
+    reqBodyMap.put(Constants.ID, ref_Id);
+    reqBodyMap.put(Constants.TITLE, name);
+    reqBodyMap.put(Constants.REF_NODES, termIdentifier);
+    CustomResponse desgResponse = updateCompSubTheme(objectMapper.valueToTree(reqBodyMap));
+    if (desgResponse.getResponseCode() != HttpStatus.OK) {
+      log.error("Failed to update term: " + response.getParams().getErr());
+      setTermFailure(response, "Failed to update term.", HttpStatus.INTERNAL_SERVER_ERROR);
+    } else {
+      response.getResult().put(Constants.NODE_ID, termIdentifier);
+    }
   }
   public String generateRedisJwtTokenKey(Object requestPayload) {
     if (requestPayload != null) {

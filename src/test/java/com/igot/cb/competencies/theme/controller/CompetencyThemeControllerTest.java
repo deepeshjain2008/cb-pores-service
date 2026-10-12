@@ -8,7 +8,6 @@ import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.Constants;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,10 +34,6 @@ class CompetencyThemeControllerTest {
     private CompetencyThemeController competencyThemeController;
 
     private ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    void setUp() {
-    }
 
     @Test
     void testLoadCompetencyAreas_Success() throws Exception {

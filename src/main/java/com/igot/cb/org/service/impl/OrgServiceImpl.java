@@ -28,6 +28,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class OrgServiceImpl implements OrgService {
 
+    private static final String COPY_FRAMEWORK_ID_LOG = "copy framework id : ";
+
     private final PayloadValidation payloadValidation;
 
     private final CassandraOperation cassandraOperation;
@@ -49,77 +51,23 @@ public class OrgServiceImpl implements OrgService {
         ApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_ORG_CREATE);
         try {
             if (StringUtils.isBlank(frameworkName) || StringUtils.isBlank(orgId)) {
-                response.getParams().setStatus(Constants.FAILED);
-                response.getParams().setErrMsg("OrgID and FrameworkId is Missing");
-                response.setResponseCode(HttpStatus.BAD_REQUEST);
-                return response;
+                return setErrorResponse(response, "OrgID and FrameworkId is Missing", HttpStatus.BAD_REQUEST);
             }
             String userId = accessTokenValidator.verifyUserToken(userAuthToken);
             if (StringUtils.isBlank(userId)) {
-                response.getParams().setStatus(Constants.FAILED);
-                response.getParams().setErrMsg(Constants.USER_ID_DOESNT_EXIST);
-                response.setResponseCode(HttpStatus.BAD_REQUEST);
-                return response;
+                return setErrorResponse(response, Constants.USER_ID_DOESNT_EXIST, HttpStatus.BAD_REQUEST);
             }
             if (!isSpvRequest(userId, Arrays.asList(Constants.MDO_ADMIN,Constants.MDO_LEADER, Constants.SPV_ADMIN, Constants.SPV_PUBLISHER, Constants.STATE_ADMIN))) {
-                response.getParams().setStatus(Constants.FAILED);
-                response.getParams().setErrMsg("User does not have the required role:");
-                response.setResponseCode(HttpStatus.BAD_REQUEST);
-                return response;
+                return setErrorResponse(response, "User does not have the required role:", HttpStatus.BAD_REQUEST);
             }
             Map<String, Object> propertyMap = new HashMap<>();
             propertyMap.put(Constants.ID, orgId);
             List<Map<String, Object>> orgDetails = cassandraOperation.getRecordsByPropertiesWithoutFiltering(
                 Constants.KEYSPACE_SUNBIRD, Constants.ORG_TABLE, propertyMap, null, 1);
             if (CollectionUtils.isEmpty(orgDetails)) {
-                response.getParams().setStatus(Constants.FAILED);
-                response.getParams().setErrMsg("Organization not found");
-                response.setResponseCode(HttpStatus.BAD_REQUEST);
-                return response;
+                return setErrorResponse(response, "Organization not found", HttpStatus.BAD_REQUEST);
             }
-            if (StringUtils.isBlank((String) orgDetails.get(0).get(Constants.FRAMEWORK_STATUS))
-                || orgDetails.get(0).get(Constants.FRAMEWORK_STATUS).toString()
-                .equalsIgnoreCase(Constants.FAILED)) {
-                String fwName = (String) orgDetails.get(0).get(Constants.FRAMEWORKID);
-                if (StringUtils.isBlank(fwName)) {
-                    String name = processFrameworkCreate(frameworkName,orgId,true);
-                    log.info("copy framework id : ",name);
-                    if (StringUtils.isNotEmpty(name)) {
-                        log.info("copy framework id : ",name);
-                        createOrgTerm(termName, name, frameworkName, orgId, userId);
-                        publishFramework(name,orgId);
-                        log.info("copy framework published and term creation also done.");
-                        String orgUpdateUrl = cbServerProperties.getLearnerServiceUrl() + cbServerProperties.getOrgUpdateEndpoint();
-                        Map<String, Object> orgResponse = outboundRequestHandlerServiceImpl.fetchResultUsingPatch(orgUpdateUrl,createOrgHierarchyRequestMap(orgId, Constants.FRAMEWORK_ID_KEY, Constants.FRAMEWORK_STATUS_KEY, name, Constants.COMPLETED),ProjectUtil.getDefaultHeadrs(userAuthToken));
-                        if (MapUtils.isNotEmpty(orgResponse) && Constants.OK.equalsIgnoreCase(
-                                (String) orgResponse.get(Constants.RESPONSE_CODE))) {
-                            Map<String, Object> result = (Map<String, Object>) orgResponse.get(
-                                    Constants.RESULT);
-                            String orgResult = (String) result.getOrDefault(Constants.RESPONSE, "");
-                            log.info("Organization updated successfully. orgId: {}, result: {}", orgId, orgResult);
-                        }
-                        updateOrganizationFramework(name,orgId, Constants.FRAMEWORKID, Constants.FRAMEWORK_STATUS);
-                        response.getResult().put(Constants.FRAMEWORK, name);
-                        response.setResponseCode(HttpStatus.OK);
-                    } else {
-                        log.info("unable to copy a framework");
-                        response.getParams().setStatus(Constants.FAILED);
-                        response.getParams()
-                                .setErrMsg(Constants.FRAMEWORK_PROCESS_ALREADY_INITIALISED);
-                        response.setResponseCode(HttpStatus.BAD_REQUEST);
-                    }
-                } else {
-                    response.getResult().put(Constants.FRAMEWORK, fwName);
-                    response.setResponseCode(HttpStatus.OK);
-                }
-            } else {
-                response.getParams().setStatus(Constants.FAILED);
-                response.getParams()
-                    .setErrMsg(Constants.FRAMEWORK_PROCESS_ALREADY_INITIALISED);
-                response.setResponseCode(HttpStatus.BAD_REQUEST);
-                return response;
-            }
-
+            return resolveFrameworkForOrg(response, orgDetails.get(0), frameworkName, orgId, termName, userId, userAuthToken);
         } catch (CustomException e) {
             response.getParams().setErr(e.getMessage());
             response.setResponseCode(HttpStatus.BAD_REQUEST);
@@ -131,6 +79,62 @@ public class OrgServiceImpl implements OrgService {
             response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;
+    }
+
+    private ApiResponse setErrorResponse(ApiResponse response, String errMsg, HttpStatus status) {
+        response.getParams().setStatus(Constants.FAILED);
+        response.getParams().setErrMsg(errMsg);
+        response.setResponseCode(status);
+        return response;
+    }
+
+    private ApiResponse resolveFrameworkForOrg(ApiResponse response, Map<String, Object> orgDetail,
+            String frameworkName, String orgId, String termName, String userId, String userAuthToken) {
+        boolean frameworkProcessNeeded = StringUtils.isBlank((String) orgDetail.get(Constants.FRAMEWORK_STATUS))
+                || orgDetail.get(Constants.FRAMEWORK_STATUS).toString().equalsIgnoreCase(Constants.FAILED);
+        if (!frameworkProcessNeeded) {
+            return setErrorResponse(response, Constants.FRAMEWORK_PROCESS_ALREADY_INITIALISED, HttpStatus.BAD_REQUEST);
+        }
+        String fwName = (String) orgDetail.get(Constants.FRAMEWORKID);
+        if (!StringUtils.isBlank(fwName)) {
+            response.getResult().put(Constants.FRAMEWORK, fwName);
+            response.setResponseCode(HttpStatus.OK);
+            return response;
+        }
+        return createAndPublishFramework(response, frameworkName, orgId, termName, userId, userAuthToken);
+    }
+
+    private ApiResponse createAndPublishFramework(ApiResponse response, String frameworkName, String orgId,
+            String termName, String userId, String userAuthToken) {
+        String name = processFrameworkCreate(frameworkName, orgId, true);
+        log.info(COPY_FRAMEWORK_ID_LOG, name);
+        if (StringUtils.isEmpty(name)) {
+            log.info("unable to copy a framework");
+            return setErrorResponse(response, Constants.FRAMEWORK_PROCESS_ALREADY_INITIALISED, HttpStatus.BAD_REQUEST);
+        }
+        log.info(COPY_FRAMEWORK_ID_LOG, name);
+        createOrgTerm(termName, name, frameworkName, orgId, userId);
+        publishFramework(name, orgId);
+        log.info("copy framework published and term creation also done.");
+        notifyOrgFrameworkUpdate(orgId, name, userAuthToken);
+        updateOrganizationFramework(name, orgId, Constants.FRAMEWORKID, Constants.FRAMEWORK_STATUS);
+        response.getResult().put(Constants.FRAMEWORK, name);
+        response.setResponseCode(HttpStatus.OK);
+        return response;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void notifyOrgFrameworkUpdate(String orgId, String name, String userAuthToken) {
+        String orgUpdateUrl = cbServerProperties.getLearnerServiceUrl() + cbServerProperties.getOrgUpdateEndpoint();
+        Map<String, Object> orgResponse = outboundRequestHandlerServiceImpl.fetchResultUsingPatch(orgUpdateUrl,
+                createOrgHierarchyRequestMap(orgId, Constants.FRAMEWORK_ID_KEY, Constants.FRAMEWORK_STATUS_KEY, name, Constants.COMPLETED),
+                ProjectUtil.getDefaultHeadrs(userAuthToken));
+        if (MapUtils.isNotEmpty(orgResponse) && Constants.OK.equalsIgnoreCase(
+                (String) orgResponse.get(Constants.RESPONSE_CODE))) {
+            Map<String, Object> result = (Map<String, Object>) orgResponse.get(Constants.RESULT);
+            String orgResult = (String) result.getOrDefault(Constants.RESPONSE, "");
+            log.info("Organization updated successfully. orgId: {}, result: {}", orgId, orgResult);
+        }
     }
 
     private ApiResponse frameworkRead(String frameworkId) {
@@ -419,9 +423,9 @@ public class OrgServiceImpl implements OrgService {
                 String fwName = (String) orgDetail.get(Constants.ORG_HIERARCHY_FRAMEWORK_ID);
                 if (StringUtils.isBlank(fwName)) {
                     String name = processFrameworkCreate(masterFramework,orgId, false);
-                    log.info("copy framework id : ",name);
+                    log.info(COPY_FRAMEWORK_ID_LOG,name);
                     if (StringUtils.isNotEmpty(name)) {
-                        log.info("copy framework id : ",name);
+                        log.info(COPY_FRAMEWORK_ID_LOG,name);
                         publishFramework(name,orgId);
                         String orgUpdateUrl = cbServerProperties.getLearnerServiceUrl() + cbServerProperties.getOrgUpdateEndpoint();
                         Map<String, Object> orgResponse = outboundRequestHandlerServiceImpl.fetchResultUsingPatch(orgUpdateUrl,createOrgHierarchyRequestMap(orgId, Constants.ORG_HIERARCHY_FRAMEWORK_ID_KEY, Constants.ORG_HIERARCHY_FRAMEWORK_STATUS_KEY, name, Constants.COMPLETED),ProjectUtil.getDefaultHeadrs(userAuthToken));

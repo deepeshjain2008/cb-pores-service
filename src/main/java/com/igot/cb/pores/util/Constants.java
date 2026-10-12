@@ -369,6 +369,7 @@ public class Constants {
     public static final String COMPETENCIES_V6_VALIDATION_FILE_JSON = "/payloadValidation/competenciesV6Validation.json";
     public static final String SPV_PUBLISHER ="SPV_PUBLISHER";
     public static final String CONTENT_PARTNER_NAME = "contentPartnerName";
+    public static final String SEARCH_TAGS = "searchTags";
     public static final String CONTENT_PARTNER_CODE_AND_NAME_ALREADY_PRESENT = "Content partnerCode and partnerName already present in DB";
     public static final String CONTENT_PARTNER_NAME_ALREADY_PRESENT = "Content partnerName already present in DB";
     public static final String CONTENT_PARTNER_CODE_ALREADY_PRESENT = "Content partnerCode already present in DB";

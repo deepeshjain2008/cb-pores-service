@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Slf4j
 public class DemandServiceImpl implements DemandService {
+    private static final String DEMAND_DATA_NOT_FOUND = "Demand Data not Found with this ID";
     private final EsUtilService esUtilService;
     private final DemandRepository demandRepository;
     private final CacheService cacheService;
@@ -232,7 +233,7 @@ public class DemandServiceImpl implements DemandService {
                         .add(searchTagsArray);
                 }
             } else {
-                logger.error("Demand Data not Found with this ID");
+                logger.error(DEMAND_DATA_NOT_FOUND);
                 throw new CustomException(Constants.ERROR, Constants.INVALID_DATA,
                     HttpStatus.NOT_FOUND);
             }
@@ -467,7 +468,7 @@ public class DemandServiceImpl implements DemandService {
                             .add(searchTagsArray);
                     }
                 } else {
-                    logger.error("Demand Data not Found with this ID");
+                    logger.error(DEMAND_DATA_NOT_FOUND);
                     throw new CustomException(Constants.ERROR, Constants.INVALID_DATA,
                         HttpStatus.NOT_FOUND);
                 }
@@ -490,7 +491,7 @@ public class DemandServiceImpl implements DemandService {
                 response.setResult(map);
                 response.setResponseCode(HttpStatus.OK);
             } else {
-                logger.error("Demand Data not Found with this ID");
+                logger.error(DEMAND_DATA_NOT_FOUND);
                 throw new CustomException(Constants.ERROR, Constants.INVALID_ID, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {

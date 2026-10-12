@@ -86,6 +86,10 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class DesignationServiceImpl implements DesignationService {
 
+  private static final String DESIGNATION_FIELD = "Designation";
+  private static final String ERROR_WHILE_PROCESSING_FILE = "Error while processing file: {}";
+  private static final String ISO_DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+
   private final ObjectMapper objectMapper;
 
   private final DesignationRepository designationRepository;
@@ -148,11 +152,11 @@ public class DesignationServiceImpl implements DesignationService {
       }
       designationJson.forEach(
           eachDesignation -> {
-            if (!eachDesignation.isNull() && eachDesignation.has("Designation") && !eachDesignation.get("Designation").isNull()) {
-              if (eachDesignation.has("Designation") && !eachDesignation.get(
-                  "Designation").isNull()) {
+            if (!eachDesignation.isNull() && eachDesignation.has(DESIGNATION_FIELD) && !eachDesignation.get(DESIGNATION_FIELD).isNull()) {
+              if (eachDesignation.has(DESIGNATION_FIELD) && !eachDesignation.get(
+                  DESIGNATION_FIELD).isNull()) {
                 ((ObjectNode) eachDesignation).put(Constants.DESIGNATION,
-                    eachDesignation.get("Designation"));
+                    eachDesignation.get(DESIGNATION_FIELD));
               }
               if (eachDesignation.has(Constants.UPDATED_DESIGNATION) && !eachDesignation.get(
                   Constants.UPDATED_DESIGNATION).isNull()) {
@@ -240,93 +244,96 @@ public class DesignationServiceImpl implements DesignationService {
   public ApiResponse createTerm(JsonNode request) {
     ApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_DESIGNATION_CREATE);
     try {
-    payloadValidation.validatePayload(Constants.TERM_CREATE_PAYLOAD_VALIDATION, request);
-    String name = request.get(Constants.NAME).asText();
-    String ref_Id = request.get(Constants.REF_ID).asText();
-    String framework = request.get(Constants.FRAMEWORK).asText();
-    String category = request.get(Constants.CATEGORY).asText();
-    JsonNode additionalProperties = request.get(Constants.ADDITIONAL_PROPERTIES);
-    String parentCategory = additionalProperties.path(Constants.PARENT_CATEGORY).asText();
-    String termCode = additionalProperties.path(Constants.PREV_TERM_CODE).asText();
-    Optional<DesignationEntity> designationEntity = designationRepository.findByIdAndIsActive(ref_Id, Boolean.TRUE);
-    if (designationEntity.isPresent()) {
+      payloadValidation.validatePayload(Constants.TERM_CREATE_PAYLOAD_VALIDATION, request);
+      String name = request.get(Constants.NAME).asText();
+      String ref_Id = request.get(Constants.REF_ID).asText();
+      String framework = request.get(Constants.FRAMEWORK).asText();
+      String category = request.get(Constants.CATEGORY).asText();
+      JsonNode additionalProperties = request.get(Constants.ADDITIONAL_PROPERTIES);
+      String parentCategory = additionalProperties.path(Constants.PARENT_CATEGORY).asText();
+      String termCode = additionalProperties.path(Constants.PREV_TERM_CODE).asText();
+      Optional<DesignationEntity> designationEntity = designationRepository.findByIdAndIsActive(ref_Id, Boolean.TRUE);
+      if (designationEntity.isEmpty()) {
+        log.error("Failed to validate Designation exists with name: " + ref_Id);
+        setTermFailure(response, "Designation Not Exist.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return response;
+      }
       DesignationEntity designation = designationEntity.get();
-      if (designation.getIsActive()) {
-        ApiResponse readResponse = frameworkRead(framework, parentCategory, termCode, ref_Id);
-        if (readResponse == null) {
-          response.getParams().setErr("Failed to validate sector exists or not.");
-          response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-          response.getParams().setStatus(Constants.FAILED);
-        } else if (HttpStatus.NOT_FOUND.equals(readResponse.getResponseCode())) {
-          Map<String, Object> reqBody = new HashMap<>();
-          request.fields().forEachRemaining(entry -> reqBody.put(entry.getKey(), toJavaObject(entry.getValue())));
-          Map<String, Object> termReq = new HashMap<String, Object>();
-          termReq.put(Constants.TERM, reqBody);
-          Map<String, Object> createReq = new HashMap<String, Object>();
-          createReq.put(Constants.REQUEST, termReq);
-          StringBuilder strUrl = new StringBuilder(cbServerProperties.getKnowledgeMS());
-          strUrl.append(cbServerProperties.getOdcsTermCrete()).append("?framework=")
-                  .append(framework).append("&category=")
-                  .append(category);
-          Map<String, Object> termResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
-                  createReq);
-          if (termResponse != null
-                  && Constants.OK.equalsIgnoreCase((String) termResponse.get(Constants.RESPONSE_CODE))) {
-            Map<String, Object> resultMap = (Map<String, Object>) termResponse.get(Constants.RESULT);
-            List<String> termIdentifier = (List<String>) resultMap.getOrDefault(Constants.NODE_ID, "");
-            log.info("Created Designation successfully with name: " + ref_Id);
-            log.info("termIdentifier : " + termIdentifier);
-            Map<String, Object> reqBodyMap = new HashMap<>();
-            reqBodyMap.put(Constants.ID, ref_Id);
-            reqBodyMap.put(Constants.DESIGNATION, name);
-            reqBodyMap.put(Constants.REF_NODES, termIdentifier);
-            CustomResponse desgResponse = updateIdentifiersToDesignation(objectMapper.valueToTree(reqBodyMap));
-            if (desgResponse.getResponseCode() != HttpStatus.OK) {
-              log.error("Failed to update designation: " + response.getParams().getErr());
-              response.getParams().setErr("Failed to update designation.");
-              response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-              response.getParams().setStatus(Constants.FAILED);
-            } else {
-              response.getResult().put(Constants.NODE_ID, termIdentifier);
-            }
-          } else {
-            log.error("Failed to create the Designation with name: " + ref_Id);
-            response.getParams().setErr("Failed to create the Designation");
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-            response.getParams().setStatus(Constants.FAILED);
-          }
-        } else if (HttpStatus.CONFLICT.equals(readResponse.getResponseCode())) {
-          String errMsg = Constants.TERM_CREATION_NOT_POSSIBLE + ref_Id;
-          log.error(errMsg);
-          response.getParams().setErr(errMsg);
-          response.setResponseCode(HttpStatus.BAD_REQUEST);
-          response.getParams().setStatus(Constants.FAILED);
-        } else {
-          log.error("Failed to create the Designation with name: " + ref_Id);
-          response.getParams().setErr("Failed to create.");
-          response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-          response.getParams().setStatus(Constants.FAILED);
-        }
-      } else {
+      if (!designation.getIsActive()) {
         //if desg. is not active.
         log.error("Failed to create Designation exists with name: " + ref_Id);
-        response.getParams().setErr("Failed to create Designation.");
-        response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        response.getParams().setStatus(Constants.FAILED);
+        setTermFailure(response, "Failed to create Designation.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return response;
       }
-    } else {
-      log.error("Failed to validate Designation exists with name: " + ref_Id);
-      response.getParams().setErr("Designation Not Exist.");
-      response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-      response.getParams().setStatus(Constants.FAILED);
-    }
-  } catch (CustomException e) {
+      ApiResponse readResponse = frameworkRead(framework, parentCategory, termCode, ref_Id);
+      handleTermReadResponse(response, readResponse, request, name, ref_Id, framework, category);
+    } catch (CustomException e) {
       response.getParams().setErr(e.getMessage());
       response.setResponseCode(HttpStatus.BAD_REQUEST);
       response.getParams().setStatus(Constants.FAILED);
       log.error("Payload validation failed: " + e.getMessage());
     }
     return response;
+  }
+
+  private void setTermFailure(ApiResponse response, String errMsg, HttpStatus status) {
+    response.getParams().setErr(errMsg);
+    response.setResponseCode(status);
+    response.getParams().setStatus(Constants.FAILED);
+  }
+
+  private void handleTermReadResponse(ApiResponse response, ApiResponse readResponse, JsonNode request,
+          String name, String ref_Id, String framework, String category) {
+    if (readResponse == null) {
+      setTermFailure(response, "Failed to validate sector exists or not.", HttpStatus.INTERNAL_SERVER_ERROR);
+    } else if (HttpStatus.NOT_FOUND.equals(readResponse.getResponseCode())) {
+      createTermViaOdcs(response, request, name, ref_Id, framework, category);
+    } else if (HttpStatus.CONFLICT.equals(readResponse.getResponseCode())) {
+      String errMsg = Constants.TERM_CREATION_NOT_POSSIBLE + ref_Id;
+      log.error(errMsg);
+      setTermFailure(response, errMsg, HttpStatus.BAD_REQUEST);
+    } else {
+      log.error("Failed to create the Designation with name: " + ref_Id);
+      setTermFailure(response, "Failed to create.", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void createTermViaOdcs(ApiResponse response, JsonNode request, String name, String ref_Id,
+          String framework, String category) {
+    Map<String, Object> reqBody = new HashMap<>();
+    request.fields().forEachRemaining(entry -> reqBody.put(entry.getKey(), toJavaObject(entry.getValue())));
+    Map<String, Object> termReq = new HashMap<String, Object>();
+    termReq.put(Constants.TERM, reqBody);
+    Map<String, Object> createReq = new HashMap<String, Object>();
+    createReq.put(Constants.REQUEST, termReq);
+    StringBuilder strUrl = new StringBuilder(cbServerProperties.getKnowledgeMS());
+    strUrl.append(cbServerProperties.getOdcsTermCrete()).append("?framework=")
+            .append(framework).append("&category=")
+            .append(category);
+    Map<String, Object> termResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
+            createReq);
+    if (termResponse == null
+            || !Constants.OK.equalsIgnoreCase((String) termResponse.get(Constants.RESPONSE_CODE))) {
+      log.error("Failed to create the Designation with name: " + ref_Id);
+      setTermFailure(response, "Failed to create the Designation", HttpStatus.INTERNAL_SERVER_ERROR);
+      return;
+    }
+    Map<String, Object> resultMap = (Map<String, Object>) termResponse.get(Constants.RESULT);
+    List<String> termIdentifier = (List<String>) resultMap.getOrDefault(Constants.NODE_ID, "");
+    log.info("Created Designation successfully with name: " + ref_Id);
+    log.info("termIdentifier : " + termIdentifier);
+    Map<String, Object> reqBodyMap = new HashMap<>();
+    reqBodyMap.put(Constants.ID, ref_Id);
+    reqBodyMap.put(Constants.DESIGNATION, name);
+    reqBodyMap.put(Constants.REF_NODES, termIdentifier);
+    CustomResponse desgResponse = updateIdentifiersToDesignation(objectMapper.valueToTree(reqBodyMap));
+    if (desgResponse.getResponseCode() != HttpStatus.OK) {
+      log.error("Failed to update designation: " + response.getParams().getErr());
+      setTermFailure(response, "Failed to update designation.", HttpStatus.INTERNAL_SERVER_ERROR);
+    } else {
+      response.getResult().put(Constants.NODE_ID, termIdentifier);
+    }
   }
 
   @Override
@@ -441,7 +448,7 @@ public class DesignationServiceImpl implements DesignationService {
         return response;
       }
     } catch (Exception e) {
-      log.error("Error while processing file: {}", e.getMessage());
+      log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
   }
@@ -642,7 +649,7 @@ public class DesignationServiceImpl implements DesignationService {
         throw new RuntimeException("Unsupported file type: " + fileName);
       }
     } catch (IOException e) {
-      log.error("Error while processing file: {}", e.getMessage());
+      log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
   }
@@ -672,7 +679,7 @@ public class DesignationServiceImpl implements DesignationService {
                   && DateUtil.isCellDateFormatted(valueCell)) {
                 // Handle date format
                 Date date = valueCell.getDateCellValue();
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_PATTERN);
                 cellValue = dateFormat.format(date);
               } else {
                 cellValue = formatter.formatCellValue(valueCell).replace("\n", ",").trim();
@@ -712,7 +719,7 @@ public class DesignationServiceImpl implements DesignationService {
           if (cellValue != null && !cellValue.trim().isEmpty()) {
             // Handle date format (assuming date is in a specific format)
             if (isDate(cellValue)) {
-              SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+              SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_PATTERN);
               cellValue = dateFormat.format(parseDate(cellValue));
             } else {
               cellValue = cellValue.replace("\n", ",").trim();
@@ -746,7 +753,7 @@ public class DesignationServiceImpl implements DesignationService {
 
   private Date parseDate(String value) throws Exception {
     // Customize this date parsing logic based on the expected date format in your CSV
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_PATTERN);
     return dateFormat.parse(value);
   }
   public ApiResponse readTerm(String Id, String framework, String category) {
@@ -867,7 +874,7 @@ public class DesignationServiceImpl implements DesignationService {
         }
       }
     } catch (Exception e) {
-      log.error("Error while processing file: {}", e.getMessage());
+      log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
     return response;

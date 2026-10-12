@@ -21,6 +21,9 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class OutboundRequestHandlerServiceImpl {
+	private static final String ERROR_RECEIVED = "Error received: ";
+	private static final String ERROR_RESPONSE = "Error Response: ";
+
 	private CbExtLogger log = new CbExtLogger(getClass().getName());
 
 	private final RestTemplate restTemplate;
@@ -94,11 +97,11 @@ public class OutboundRequestHandlerServiceImpl {
 						});
 			} catch (Exception e1) {
 			}
-			log.error("Error received: " + e.getResponseBodyAsString(), e);
+			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		} catch (Exception e) {
 			log.error(e);
 			try {
-				log.warn("Error Response: " + mapper.writeValueAsString(response));
+				log.warn(ERROR_RESPONSE + mapper.writeValueAsString(response));
 			} catch (Exception e1) {
 			}
 		}
@@ -160,11 +163,11 @@ public class OutboundRequestHandlerServiceImpl {
 						});
 			} catch (Exception e1) {
 			}
-			log.error("Error received: " + e.getResponseBodyAsString(), e);
+			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		} catch (Exception e) {
 			log.error(e);
 			try {
-				log.warn("Error Response: " + mapper.writeValueAsString(response));
+				log.warn(ERROR_RESPONSE + mapper.writeValueAsString(response));
 			} catch (Exception e1) {
 			}
 		}
@@ -202,11 +205,11 @@ public class OutboundRequestHandlerServiceImpl {
 						});
 			} catch (Exception e1) {
 			}
-			log.error("Error received: " + hce.getResponseBodyAsString(), hce);
+			log.error(ERROR_RECEIVED + hce.getResponseBodyAsString(), hce);
 		} catch(JsonProcessingException e) {
 			log.error(e);
 			try {
-				log.warn("Error Response: " + mapper.writeValueAsString(response));
+				log.warn(ERROR_RESPONSE + mapper.writeValueAsString(response));
 			} catch (Exception e1) {
 			}
 		}
@@ -236,7 +239,7 @@ public class OutboundRequestHandlerServiceImpl {
 						});
 			} catch (Exception e1) {
 			}
-			log.error("Error received: " + e.getResponseBodyAsString(), e);
+			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		}
 		if (response == null) {
 			return MapUtils.EMPTY_MAP;

@@ -60,6 +60,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PlayListServiceImpl implements PlayListSerive {
 
+  private static final String NULL_STRING_LITERAL = "[null]";
+  private static final String CACHED_PLAYLIST_LOG = "Cached PlayList: ";
+  private static final String FAILED_TO_CREATE_PLAYLIST_LOG = "Failed to Create PalyList: ";
+
   private final PlayListRepository playListRepository;
 
   @Value("${playlist.redis.ttl}")
@@ -252,7 +256,7 @@ public class PlayListServiceImpl implements PlayListSerive {
         log.info("Cached PlayList for orgId: " + orgId);
 
       }
-      if (playListStringFromRedis == null || "[null]".equals(playListStringFromRedis)
+      if (playListStringFromRedis == null || NULL_STRING_LITERAL.equals(playListStringFromRedis)
           || playListStringFromRedis.isEmpty()) {
         // Fetch from postgres and add fetched playlist into redis
         Optional<PlayListEntity> optionalJsonNodeEntity = Optional.ofNullable(
@@ -271,7 +275,7 @@ public class PlayListServiceImpl implements PlayListSerive {
           for (String contextType : contextTypes) {
             playListStringFromRedis =
                 redisCacheMngr.hget(orgId + contextType, redisInsightIndex, orgId).toString();
-            log.info("Cached PlayList: " + playListStringFromRedis);
+            log.info(CACHED_PLAYLIST_LOG + playListStringFromRedis);
 
           }
         } else {
@@ -313,7 +317,7 @@ public class PlayListServiceImpl implements PlayListSerive {
       }
       return response;
     } catch (Exception e) {
-      logger.error("Failed to Create PalyList: ", e);
+      logger.error(FAILED_TO_CREATE_PLAYLIST_LOG, e);
       response.getParams().setStatus(Constants.FAILED);
       response.getParams().setErrMsg(e.getMessage());
       response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -387,7 +391,7 @@ public class PlayListServiceImpl implements PlayListSerive {
         return response;
       }
     } catch (Exception e) {
-      logger.error("Failed to Create PalyList: " + playListDetails.get(Constants.ORG_ID), e);
+      logger.error(FAILED_TO_CREATE_PLAYLIST_LOG + playListDetails.get(Constants.ORG_ID), e);
       response.getParams().setStatus(Constants.FAILED);
       response.getParams().setErrMsg(Constants.NOT_FOUND);
       response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -486,7 +490,7 @@ public class PlayListServiceImpl implements PlayListSerive {
           redisCacheMngr.hget(id,
               redisInsightIndex, orgId).toString();
       log.info("Cached PlayList for orgId: " + orgId);
-      if (playListStringFromRedis == null || "[null]".equals(playListStringFromRedis)
+      if (playListStringFromRedis == null || NULL_STRING_LITERAL.equals(playListStringFromRedis)
           || playListStringFromRedis.isEmpty()) {
         String requestType = "";
         if (id.startsWith(orgId)) {
@@ -509,7 +513,7 @@ public class PlayListServiceImpl implements PlayListSerive {
 
           playListStringFromRedis =
               redisCacheMngr.hget(id, redisInsightIndex, orgId).toString();
-          log.info("Cached PlayList: " + playListStringFromRedis);
+          log.info(CACHED_PLAYLIST_LOG + playListStringFromRedis);
 
         } else {
           logger.error("Failed to Fetch PlayList: ");
@@ -549,7 +553,7 @@ public class PlayListServiceImpl implements PlayListSerive {
       }
       return response;
     } catch (Exception e) {
-      logger.error("Failed to Create PalyList: ", e);
+      logger.error(FAILED_TO_CREATE_PLAYLIST_LOG, e);
       response.getParams().setStatus(Constants.FAILED);
       response.getParams().setErrMsg(e.getMessage());
       response.setResponseCode(HttpStatus.NOT_FOUND);
@@ -731,7 +735,7 @@ public class PlayListServiceImpl implements PlayListSerive {
           redisCacheMngr.hget(id,
               redisInsightIndex, orgId).toString();
       log.info("Cached PlayList for id: " + playListId);
-      if (playListStringFromRedis == null || "[null]".equals(playListStringFromRedis)
+      if (playListStringFromRedis == null || NULL_STRING_LITERAL.equals(playListStringFromRedis)
           || playListStringFromRedis.isEmpty()) {
         // Fetch from postgres and add fetched playlist into redis
         Optional<PlayListEntity> optionalJsonNodeEntity =
@@ -749,7 +753,7 @@ public class PlayListServiceImpl implements PlayListSerive {
 
           playListStringFromRedis =
               redisCacheMngr.hget(id, redisInsightIndex, orgId).toString();
-          log.info("Cached PlayList: " + playListStringFromRedis);
+          log.info(CACHED_PLAYLIST_LOG + playListStringFromRedis);
 
         } else {
           logger.error("Failed to Fetch PlayList: ");
@@ -790,7 +794,7 @@ public class PlayListServiceImpl implements PlayListSerive {
       }
       return response;
     } catch (Exception e) {
-      logger.error("Failed to Create PalyList: ", e);
+      logger.error(FAILED_TO_CREATE_PLAYLIST_LOG, e);
       response.getParams().setStatus(Constants.FAILED);
       response.getParams().setErrMsg(e.getMessage());
       response.setResponseCode(HttpStatus.NOT_FOUND);

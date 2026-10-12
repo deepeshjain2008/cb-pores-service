@@ -24,6 +24,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class RequestHandlerServiceImpl {
+    private static final String ERROR_RECEIVED = "Error received: ";
+
     private Logger log = LoggerFactory.getLogger(DemandServiceImpl.class);
 
     private final RestTemplate restTemplate;
@@ -59,7 +61,7 @@ public class RequestHandlerServiceImpl {
                         });
             } catch (Exception e1) {
             }
-            log.error("Error received: " + hce.getResponseBodyAsString(), hce);
+            log.error(ERROR_RECEIVED + hce.getResponseBodyAsString(), hce);
         } catch(JsonProcessingException e) {
             log.error(String.valueOf(e));
             try {
@@ -94,7 +96,7 @@ public class RequestHandlerServiceImpl {
                         });
             } catch (Exception e1) {
             }
-            log.error("Error received: " + e.getResponseBodyAsString(), e);
+            log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             log.error(String.valueOf(e));
             try {
@@ -128,7 +130,7 @@ public class RequestHandlerServiceImpl {
                         });
             } catch (Exception e1) {
             }
-            log.error("Error received: " + e.getResponseBodyAsString(), e);
+            log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
         }
         if (response == null) {
             return MapUtils.EMPTY_MAP;
