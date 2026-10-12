@@ -39,6 +39,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class AnnouncementServiceImpl implements AnnouncementService {
+  private static final String READ_METHOD_LOG = "AnnouncementServiceImpl::read:inside the method";
   private Logger logger = LoggerFactory.getLogger(AnnouncementServiceImpl.class);
   private final PayloadValidation payloadValidation;
   private final AnnouncementRepository announcementRepository;
@@ -225,7 +226,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
   @Override
   public CustomResponse updateAnnouncement(JsonNode announcementDetails) {
-    log.info("AnnouncementServiceImpl::read:inside the method");
+    log.info(READ_METHOD_LOG);
     CustomResponse response = new CustomResponse();
     if (announcementDetails.get(Constants.ANNOUNCEMENT_ID) == null) {
       throw new CustomException(Constants.ERROR,
@@ -267,7 +268,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
   @Override
   public CustomResponse readAnnouncement(String id) {
-    log.info("AnnouncementServiceImpl::read:inside the method");
+    log.info(READ_METHOD_LOG);
     CustomResponse response = new CustomResponse();
     if (StringUtils.isEmpty(id)) {
       logger.error("AnnouncementServiceImpl::read:Id not found");
@@ -313,7 +314,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
   @Override
   public CustomResponse deleteAnnouncement(String id) {
-    log.info("AnnouncementServiceImpl::read:inside the method");
+    log.info(READ_METHOD_LOG);
     CustomResponse response = new CustomResponse();
     Optional<AnnouncementEntity> optSchemeDetails = announcementRepository.findById(
         id);

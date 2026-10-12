@@ -12,7 +12,6 @@ import org.hibernate.annotations.Type;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.io.Serializable;
 import java.sql.Timestamp;
 
 @Getter
@@ -21,7 +20,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CiosContentEntity implements Serializable {
+public class CiosContentEntity {
     @Id
     private String contentId;
     private String externalId;

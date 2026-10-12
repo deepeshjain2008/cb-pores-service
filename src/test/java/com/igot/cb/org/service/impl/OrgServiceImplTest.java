@@ -14,7 +14,6 @@ import java.util.*;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -55,10 +54,6 @@ class OrgServiceImplTest {
 
 
     private final String frameworkId = "test-framework-id";
-
-    @BeforeEach
-    void setUp() {
-    }
 
     /**
      * Test readFramework method with blank frameworkName and orgId

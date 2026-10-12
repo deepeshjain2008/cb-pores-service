@@ -66,7 +66,7 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
         ApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_PARTNER_CREATE);
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         payloadValidation.validatePayload(Constants.PAYLOAD_VALIDATION_FILE_CONTENT_PARTNER_REGISTRATION, registrationDetails);
-        String organizationName = registrationDetails.path("contentPartnerName").asText("");
+        String organizationName = registrationDetails.path(Constants.CONTENT_PARTNER_NAME).asText("");
         String contactName = registrationDetails.path(Constants.EVENT_CONTACT_NAME).asText("");
         String email = registrationDetails.path("email").asText("");
         Optional<ContentPartnerRegistrationEntity> existingByOrgName =
@@ -155,7 +155,7 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
         ContentPartnerRegistrationEntity entity = content.get();
         ObjectNode dataNode = (ObjectNode) entity.getData();
         String email = dataNode.path("email").asText("");
-        String organizationName = dataNode.path("contentPartnerName").asText("");
+        String organizationName = dataNode.path(Constants.CONTENT_PARTNER_NAME).asText("");
         String contactName = dataNode.path(Constants.EVENT_CONTACT_NAME).asText("");
         String applicationId = dataNode.path(Constants.APPLICATION_ID).asText("");
         dataNode.put(Constants.STATUS, newStatus);
@@ -326,8 +326,8 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
         List<String> searchTags = new ArrayList<>();
 
         // Preserve existing searchTags if present
-        if (formattedData.has("searchTags") && formattedData.get("searchTags").isArray()) {
-            ArrayNode existingSearchTags = (ArrayNode) formattedData.get("searchTags");
+        if (formattedData.has(Constants.SEARCH_TAGS) && formattedData.get(Constants.SEARCH_TAGS).isArray()) {
+            ArrayNode existingSearchTags = (ArrayNode) formattedData.get(Constants.SEARCH_TAGS);
             existingSearchTags.forEach(tag -> {
                 if (tag.isTextual() && !tag.asText().isEmpty()) {
                     searchTags.add(tag.asText());
@@ -335,8 +335,8 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
             });
         }
 
-        if (formattedData.has("contentPartnerName")) {
-            String partnerName = formattedData.get("contentPartnerName").textValue();
+        if (formattedData.has(Constants.CONTENT_PARTNER_NAME)) {
+            String partnerName = formattedData.get(Constants.CONTENT_PARTNER_NAME).textValue();
             if (StringUtils.isNotBlank(partnerName)) {
                 if (!searchTags.contains(partnerName.toLowerCase())) {
                     searchTags.add(partnerName.toLowerCase());
@@ -345,7 +345,7 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
         }
 
         ArrayNode searchTagsArray = objectMapper.valueToTree(searchTags);
-        ((ObjectNode) formattedData).put("searchTags", searchTagsArray);
+        ((ObjectNode) formattedData).put(Constants.SEARCH_TAGS, searchTagsArray);
         return formattedData;
     }
 
