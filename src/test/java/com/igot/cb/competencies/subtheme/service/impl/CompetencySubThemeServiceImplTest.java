@@ -532,7 +532,7 @@ class CompetencySubThemeServiceImplTest {
      * when the Redis cache does not contain the search result and the search string is valid.
      */
     @Test
-    void test_searchCompSubTheme_3() throws Exception {
+    void test_searchCompSubTheme_3()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("valid search");

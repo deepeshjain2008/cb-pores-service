@@ -36,6 +36,7 @@ import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
+import com.igot.cb.pores.util.TermCreationHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +113,8 @@ public class DesignationServiceImpl implements DesignationService {
   private Logger logger = LoggerFactory.getLogger(DesignationServiceImpl.class);
 
   private final AccessTokenValidator accessTokenValidator;
+
+  private final TermCreationHelper termCreationHelper;
 
 
   @Override
@@ -254,18 +257,20 @@ public class DesignationServiceImpl implements DesignationService {
       Optional<DesignationEntity> designationEntity = designationRepository.findByIdAndIsActive(ref_Id, Boolean.TRUE);
       if (designationEntity.isEmpty()) {
         log.error("Failed to validate Designation exists with name: " + ref_Id);
-        setTermFailure(response, "Designation Not Exist.", HttpStatus.INTERNAL_SERVER_ERROR);
+        termCreationHelper.setTermFailure(response, "Designation Not Exist.", HttpStatus.INTERNAL_SERVER_ERROR);
         return response;
       }
       DesignationEntity designation = designationEntity.get();
       if (!designation.getIsActive()) {
         //if desg. is not active.
         log.error("Failed to create Designation exists with name: " + ref_Id);
-        setTermFailure(response, "Failed to create Designation.", HttpStatus.INTERNAL_SERVER_ERROR);
+        termCreationHelper.setTermFailure(response, "Failed to create Designation.", HttpStatus.INTERNAL_SERVER_ERROR);
         return response;
       }
       ApiResponse readResponse = frameworkRead(framework, parentCategory, termCode, ref_Id);
-      handleTermReadResponse(response, readResponse, request, name, ref_Id, framework, category);
+      termCreationHelper.handleTermReadResponse(response, readResponse, request, name, ref_Id, framework, category,
+              "Failed to validate sector exists or not.", "Designation", "designation", Constants.DESIGNATION,
+              this::updateIdentifiersToDesignation);
     } catch (CustomException e) {
       response.getParams().setErr(e.getMessage());
       response.setResponseCode(HttpStatus.BAD_REQUEST);
@@ -273,66 +278,6 @@ public class DesignationServiceImpl implements DesignationService {
       log.error("Payload validation failed: " + e.getMessage());
     }
     return response;
-  }
-
-  private void setTermFailure(ApiResponse response, String errMsg, HttpStatus status) {
-    response.getParams().setErr(errMsg);
-    response.setResponseCode(status);
-    response.getParams().setStatus(Constants.FAILED);
-  }
-
-  private void handleTermReadResponse(ApiResponse response, ApiResponse readResponse, JsonNode request,
-          String name, String ref_Id, String framework, String category) {
-    if (readResponse == null) {
-      setTermFailure(response, "Failed to validate sector exists or not.", HttpStatus.INTERNAL_SERVER_ERROR);
-    } else if (HttpStatus.NOT_FOUND.equals(readResponse.getResponseCode())) {
-      createTermViaOdcs(response, request, name, ref_Id, framework, category);
-    } else if (HttpStatus.CONFLICT.equals(readResponse.getResponseCode())) {
-      String errMsg = Constants.TERM_CREATION_NOT_POSSIBLE + ref_Id;
-      log.error(errMsg);
-      setTermFailure(response, errMsg, HttpStatus.BAD_REQUEST);
-    } else {
-      log.error("Failed to create the Designation with name: " + ref_Id);
-      setTermFailure(response, "Failed to create.", HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private void createTermViaOdcs(ApiResponse response, JsonNode request, String name, String ref_Id,
-          String framework, String category) {
-    Map<String, Object> reqBody = new HashMap<>();
-    request.fields().forEachRemaining(entry -> reqBody.put(entry.getKey(), toJavaObject(entry.getValue())));
-    Map<String, Object> termReq = new HashMap<String, Object>();
-    termReq.put(Constants.TERM, reqBody);
-    Map<String, Object> createReq = new HashMap<String, Object>();
-    createReq.put(Constants.REQUEST, termReq);
-    StringBuilder strUrl = new StringBuilder(cbServerProperties.getKnowledgeMS());
-    strUrl.append(cbServerProperties.getOdcsTermCrete()).append("?framework=")
-            .append(framework).append("&category=")
-            .append(category);
-    Map<String, Object> termResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResultUsingPost(strUrl.toString(),
-            createReq);
-    if (termResponse == null
-            || !Constants.OK.equalsIgnoreCase((String) termResponse.get(Constants.RESPONSE_CODE))) {
-      log.error("Failed to create the Designation with name: " + ref_Id);
-      setTermFailure(response, "Failed to create the Designation", HttpStatus.INTERNAL_SERVER_ERROR);
-      return;
-    }
-    Map<String, Object> resultMap = (Map<String, Object>) termResponse.get(Constants.RESULT);
-    List<String> termIdentifier = (List<String>) resultMap.getOrDefault(Constants.NODE_ID, "");
-    log.info("Created Designation successfully with name: " + ref_Id);
-    log.info("termIdentifier : " + termIdentifier);
-    Map<String, Object> reqBodyMap = new HashMap<>();
-    reqBodyMap.put(Constants.ID, ref_Id);
-    reqBodyMap.put(Constants.DESIGNATION, name);
-    reqBodyMap.put(Constants.REF_NODES, termIdentifier);
-    CustomResponse desgResponse = updateIdentifiersToDesignation(objectMapper.valueToTree(reqBodyMap));
-    if (desgResponse.getResponseCode() != HttpStatus.OK) {
-      log.error("Failed to update designation: {}", response.getParams().getErr());
-      setTermFailure(response, "Failed to update designation.", HttpStatus.INTERNAL_SERVER_ERROR);
-    } else {
-      response.getResult().put(Constants.NODE_ID, termIdentifier);
-    }
   }
 
   @Override
@@ -988,17 +933,4 @@ public class DesignationServiceImpl implements DesignationService {
     return response;
   }
 
-  private static Object toJavaObject(JsonNode jsonNode) {
-    if (jsonNode.isObject()) {
-      Map<String, Object> map = new HashMap<>();
-      jsonNode.fields().forEachRemaining(entry -> map.put(entry.getKey(), toJavaObject(entry.getValue())));
-      return map;
-    } else if (jsonNode.isArray()) {
-      List<Object> list = new ArrayList<>();
-      jsonNode.forEach(element -> list.add(toJavaObject(element)));
-      return list;
-    } else {
-      return jsonNode.asText();
-    }
-  }
 }

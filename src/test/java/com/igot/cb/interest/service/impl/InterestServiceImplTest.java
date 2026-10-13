@@ -837,7 +837,7 @@ class InterestServiceImplTest {
      * a successful response with the search result.
      */
     @Test
-    void test_searchDemand_3() throws Exception {
+    void test_searchDemand_3()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearch");

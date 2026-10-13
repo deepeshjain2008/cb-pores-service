@@ -18,6 +18,7 @@ import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
+import com.igot.cb.pores.util.PayloadValidation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,7 @@ class OrgBookmarkServiceImplTest {
     @Mock private CbServerProperties cbServerProperties;
     @Mock private AccessTokenValidator accessTokenValidator;
     @Mock private OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
+    @Mock private PayloadValidation payloadValidation;
 
     @Mock private ValueOperations<String, SearchResult> valueOperations;
 
@@ -81,7 +83,7 @@ class OrgBookmarkServiceImplTest {
     }
 
     @Test
-    void testCreateOrgBookmark_success() throws Exception {
+    void testCreateOrgBookmark_success()  {
         String authToken = "Bearer valid.token";
         String userId = "user123";
 
@@ -175,7 +177,7 @@ class OrgBookmarkServiceImplTest {
     }
 
     @Test
-    void testSearch_elasticsearchThrowsException() throws Exception {
+    void testSearch_elasticsearchThrowsException()  {
         SearchCriteria criteria = new SearchCriteria();
         criteria.setSearchString("valid");
 
@@ -335,7 +337,7 @@ class OrgBookmarkServiceImplTest {
     }
 
     @Test
-    void testReadOrgBookmarkById_fromPostgres() throws Exception {
+    void testReadOrgBookmarkById_fromPostgres()  {
         // Setup entity with orgList
         ObjectNode dataNode = new ObjectMapper().createObjectNode();
         ArrayNode arrayNode = new ObjectMapper().createArrayNode();

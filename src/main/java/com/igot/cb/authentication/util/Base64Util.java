@@ -528,11 +528,10 @@ public class Base64Util {
                     output[op++] = (byte) (localValue >> 10);
                     output[op++] = (byte) (localValue >> 2);
                     break;
-                case 1:
-                    // Read one extra input byte, which isn't enough to
+                case 1, 4:
+                    // case 1: Read one extra input byte, which isn't enough to
                     // make another output byte.  Illegal.
-                case 4:
-                    // Read one padding '=' when we expected 2.  Illegal.
+                    // case 4: Read one padding '=' when we expected 2.  Illegal.
                     this.state = 6;
                     return false;
                 case 5:

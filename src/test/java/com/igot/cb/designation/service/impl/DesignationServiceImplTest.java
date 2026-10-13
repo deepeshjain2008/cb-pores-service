@@ -20,6 +20,7 @@ import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
+import com.igot.cb.pores.util.TermCreationHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -112,6 +113,8 @@ class DesignationServiceImplTest {
         when(cbServerProperties.getDesignationValidationRegex())
                 .thenReturn("^[a-zA-Z0-9 ()&/,+-]*$");
         when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+        TermCreationHelper termCreationHelper = new TermCreationHelper(cbServerProperties, outboundRequestHandlerServiceImpl, objectMapper);
+        ReflectionTestUtils.setField(designationService, "termCreationHelper", termCreationHelper);
     }
 
     /**
@@ -124,7 +127,7 @@ class DesignationServiceImplTest {
      * - The designation title already exists in the titles map
      */
     @Test
-    void test_createDesignation_2() throws Exception {
+    void test_createDesignation_2()  {
         // Arrange
         JsonNode designationDetails = Mockito.mock(JsonNode.class);
         ObjectNode dataNode = Mockito.mock(ObjectNode.class);
@@ -149,7 +152,7 @@ class DesignationServiceImplTest {
      * attempting to create a designation that already exists in the system.
      */
     @Test
-    void test_createDesignation_alreadyExists() throws Exception {
+    void test_createDesignation_alreadyExists()  {
         // Arrange
         JsonNode designationDetails = new ObjectMapper().createObjectNode()
                 .put(Constants.DESIGNATION, "Existing Designation");
@@ -920,7 +923,7 @@ class DesignationServiceImplTest {
      * when the Redis cache does not contain the search result.
      */
     @Test
-    void test_searchDesignation_3() throws Exception {
+    void test_searchDesignation_3()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("Valid Search");
@@ -1190,7 +1193,7 @@ class DesignationServiceImplTest {
     }
 
     @Test
-    void testCreateDesignation_success() throws Exception {
+    void testCreateDesignation_success()  {
         // Create input designationDetails JSON
         ObjectMapper realObjectMapper = new ObjectMapper();
         ObjectNode designationDetails = realObjectMapper.createObjectNode();
@@ -1308,7 +1311,7 @@ class DesignationServiceImplTest {
 
 
 //    @Test
-//    void test_processExcelFile_xlsx_success() throws Exception {
+//    void test_processExcelFile_xlsx_success()  {
 //        // Create workbook
 //        Workbook workbook = new XSSFWorkbook();
 //        Sheet sheet = workbook.createSheet("Sheet1");
@@ -1443,7 +1446,7 @@ class DesignationServiceImplTest {
     }
 
 //    @Test
-//    void testProcessExcelFile_xlsx_shouldProcessSuccessfully() throws Exception {
+//    void testProcessExcelFile_xlsx_shouldProcessSuccessfully()  {
 //        Workbook workbook = new XSSFWorkbook();
 //        Sheet sheet = workbook.createSheet();
 //        Row headerRow = sheet.createRow(0);
@@ -1528,15 +1531,13 @@ class DesignationServiceImplTest {
     }
 
     @Test
-    void testToJavaObject_withObjectNode() throws Exception {
+    void testToJavaObject_withObjectNode() {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode objectNode = mapper.createObjectNode();
         objectNode.put("key1", "value1");
         objectNode.put("key2", 123);
 
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("toJavaObject", JsonNode.class);
-        method.setAccessible(true);
-        Object result = method.invoke(null, objectNode);
+        Object result = ProjectUtil.toJavaObject(objectNode);
 
         assertTrue(result instanceof Map);
         Map<?, ?> map = (Map<?, ?>) result;
@@ -1545,15 +1546,13 @@ class DesignationServiceImplTest {
     }
 
     @Test
-    void testToJavaObject_withArrayNode() throws Exception {
+    void testToJavaObject_withArrayNode() {
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode arrayNode = mapper.createArrayNode();
         arrayNode.add("item1");
         arrayNode.add(456);
 
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("toJavaObject", JsonNode.class);
-        method.setAccessible(true);
-        Object result = method.invoke(null, arrayNode);
+        Object result = ProjectUtil.toJavaObject(arrayNode);
 
         assertTrue(result instanceof List);
         List<?> list = (List<?>) result;
@@ -1562,29 +1561,25 @@ class DesignationServiceImplTest {
     }
 
     @Test
-    void testToJavaObject_withTextNode() throws Exception {
+    void testToJavaObject_withTextNode() {
         TextNode textNode = new TextNode("simpleText");
 
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("toJavaObject", JsonNode.class);
-        method.setAccessible(true);
-        Object result = method.invoke(null, textNode);
+        Object result = ProjectUtil.toJavaObject(textNode);
 
         assertEquals("simpleText", result);
     }
 
     @Test
-    void testToJavaObject_withIntNode() throws Exception {
+    void testToJavaObject_withIntNode() {
         IntNode intNode = new IntNode(42);
 
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("toJavaObject", JsonNode.class);
-        method.setAccessible(true);
-        Object result = method.invoke(null, intNode);
+        Object result = ProjectUtil.toJavaObject(intNode);
 
         assertEquals("42", result); // .asText() returns string "42"
     }
 
     @Test
-    void searchDesignation_shouldHandleEsException() throws Exception {
+    void searchDesignation_shouldHandleEsException()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("developer");

@@ -425,7 +425,7 @@ class AnnouncementServiceImplTest {
      * performs the search using EsUtilService, and returns a success response.
      */
     @Test
-    void test_searchAnnouncement_whenCacheEmptyAndValidSearchString() throws Exception {
+    void test_searchAnnouncement_whenCacheEmptyAndValidSearchString()  {
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("valid");
         searchCriteria.setPageSize(0);
@@ -460,7 +460,7 @@ class AnnouncementServiceImplTest {
      * - Successful response should be returned
      */
     @Test
-    void test_searchAnnouncement_whenCacheMissAndValidSearchStringAndEmptyPageSizeAndNonEmptyFilter() throws Exception {
+    void test_searchAnnouncement_whenCacheMissAndValidSearchStringAndEmptyPageSizeAndNonEmptyFilter()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearch");
@@ -521,7 +521,7 @@ class AnnouncementServiceImplTest {
      * a successful response with the search results from ElasticSearch.
      */
     @Test
-    void test_searchAnnouncement_whenSearchResultNotInRedisAndValidCriteria() throws Exception {
+    void test_searchAnnouncement_whenSearchResultNotInRedisAndValidCriteria()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("valid search");

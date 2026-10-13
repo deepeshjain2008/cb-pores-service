@@ -74,6 +74,8 @@ class CompetencyThemeServiceImpl2Test {
     void setup() {
         ReflectionTestUtils.setField(competencyThemeService, "searchResultRedisTtl", 3600L);
         ReflectionTestUtils.setField(competencyThemeService, "objectMapper", new ObjectMapper());
+        TermCreationHelper termCreationHelper = new TermCreationHelper(cbServerProperties, outboundRequestHandlerServiceImpl, new ObjectMapper());
+        ReflectionTestUtils.setField(competencyThemeService, "termCreationHelper", termCreationHelper);
     }
 
     @Test
@@ -124,7 +126,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateCompTheme_success() throws Exception {
+    void testCreateCompTheme_success()  {
         JsonNode input = mockInputNode("Theme A");
         String userId = "user123";
 
@@ -157,7 +159,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateCompTheme_titleAlreadyExists() throws Exception {
+    void testCreateCompTheme_titleAlreadyExists()  {
         JsonNode input = mockInputNode("Theme A");
 
         ArrayNode arrayNode = new ObjectMapper().createArrayNode();
@@ -190,7 +192,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateCompTheme_esSearchError() throws Exception {
+    void testCreateCompTheme_esSearchError()  {
         JsonNode input = mockInputNode("Theme A");
 
         when(esUtilService.isIndexPresent(Constants.COMP_THEME_INDEX_NAME)).thenReturn(true);
@@ -280,7 +282,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_TermAlreadyExistsConflict() throws Exception {
+    void testCreateTerm_TermAlreadyExistsConflict()  {
         JsonNode request = createRequestNode();
         CompetencyThemeEntity entity = new CompetencyThemeEntity();
         entity.setIsActive(true);
@@ -297,7 +299,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_InternalServerError() throws Exception {
+    void testCreateTerm_InternalServerError()  {
         JsonNode request = createRequestNode();
         CompetencyThemeEntity entity = new CompetencyThemeEntity();
         entity.setIsActive(true);
@@ -329,7 +331,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_InactiveEntity() throws Exception {
+    void testCreateTerm_InactiveEntity()  {
         JsonNode request = createRequestNode();
         CompetencyThemeEntity entity = new CompetencyThemeEntity();
         entity.setIsActive(false);
@@ -342,7 +344,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_FrameworkReadReturnsNull() throws Exception {
+    void testCreateTerm_FrameworkReadReturnsNull()  {
         JsonNode request = createRequestNode();
         CompetencyThemeEntity entity = new CompetencyThemeEntity();
         entity.setIsActive(true);
@@ -356,7 +358,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_TermCreationFails() throws Exception {
+    void testCreateTerm_TermCreationFails()  {
         JsonNode request = createRequestNode();
         CompetencyThemeEntity entity = new CompetencyThemeEntity();
         entity.setIsActive(true);
@@ -377,7 +379,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_EntityNotFound() throws Exception {
+    void testCreateTerm_EntityNotFound()  {
         JsonNode request = createRequestNode();
         when(competencyThemeRepository.findByIdAndIsActive(refId, true)).thenReturn(Optional.empty());
 
@@ -388,7 +390,7 @@ class CompetencyThemeServiceImpl2Test {
     }
 
     @Test
-    void testCreateTerm_UnexpectedException() throws Exception {
+    void testCreateTerm_UnexpectedException()  {
         JsonNode request = createRequestNode();
         when(competencyThemeRepository.findByIdAndIsActive(refId, true)).thenThrow(new RuntimeException("DB down"));
 

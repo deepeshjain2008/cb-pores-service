@@ -88,6 +88,8 @@ class CompetencySubThemeServiceImpl3Test {
         ReflectionTestUtils.setField(service, "competencySubThemeRepository", repository);
         ReflectionTestUtils.setField(service, "outboundRequestHandlerServiceImpl", outboundRequestHandlerServiceImpl);
         ReflectionTestUtils.setField(service, "designationService", designationService);
+        TermCreationHelper termCreationHelper = new TermCreationHelper(cbServerProperties, outboundRequestHandlerServiceImpl, new ObjectMapper());
+        ReflectionTestUtils.setField(service, "termCreationHelper", termCreationHelper);
         when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
     }
     @Test
@@ -135,7 +137,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testLoadCompetencySubTheme_esThrowsException() throws Exception {
+    void testLoadCompetencySubTheme_esThrowsException()  {
         String token = "token123";
         when(accessTokenValidator.verifyUserToken(token)).thenReturn("user");
 
@@ -159,7 +161,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testLoadCompetencySubTheme_indexNotPresent() throws Exception {
+    void testLoadCompetencySubTheme_indexNotPresent()  {
         String token = "token123";
         when(accessTokenValidator.verifyUserToken(token)).thenReturn("user-123");
         when(esUtilService.isIndexPresent(Constants.COMP_SUB_THEME_INDEX_NAME)).thenReturn(false);
@@ -171,7 +173,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testCreateCompSubTheme_success() throws Exception {
+    void testCreateCompSubTheme_success()  {
         String token = "valid-token";
         String userId = "user-123";
         long count = 10L;
@@ -201,7 +203,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testCreateCompSubTheme_duplicateEntry() throws Exception {
+    void testCreateCompSubTheme_duplicateEntry()  {
         String token = "valid-token";
         String userId = "user-123";
         String title = "Digital Literacy";
@@ -239,7 +241,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testCreateCompSubTheme_esException() throws Exception {
+    void testCreateCompSubTheme_esException()  {
         String token = "token";
         String userId = "user";
         when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
@@ -304,7 +306,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testCreateTerm_InternalServerError() throws Exception {
+    void testCreateTerm_InternalServerError()  {
         ObjectMapper mapper = new ObjectMapper();
 
         // Build request JSON with all required non-null strings
@@ -368,7 +370,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testCreateTerm_successfulCreation() throws Exception {
+    void testCreateTerm_successfulCreation()  {
         ObjectMapper mapper = new ObjectMapper();
 
         // Build request JSON with all required non-null strings
@@ -567,7 +569,7 @@ class CompetencySubThemeServiceImpl3Test {
     }
 
     @Test
-    void testSearchCompSubTheme_esThrowsException_redisSetInvoked() throws Exception {
+    void testSearchCompSubTheme_esThrowsException_redisSetInvoked()  {
         SearchCriteria criteria = new SearchCriteria();
         criteria.setSearchString("errorTest");
 

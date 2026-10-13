@@ -85,7 +85,7 @@ class CompetencyAreaServiceImpl2Test {
     }
 
     @Test
-    void testCreateCompArea_Success() throws Exception {
+    void testCreateCompArea_Success()  {
         // Prepare input JsonNode
         ObjectMapper realMapper = new ObjectMapper();
         ObjectNode inputNode = realMapper.createObjectNode();
@@ -132,7 +132,7 @@ class CompetencyAreaServiceImpl2Test {
     }
 
     @Test
-    void testLoadCompetencyArea_Success() throws Exception {
+    void testLoadCompetencyArea_Success()  {
         // Arrange
         String token = "valid-token";
         String userId = "user123";

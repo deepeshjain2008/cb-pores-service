@@ -103,7 +103,7 @@ class CompetencyAreaServiceImplTest {
      * - StringUtils.isBlank(userId) || userId.equalsIgnoreCase(Constants.UNAUTHORIZED) is true
      */
     @Test
-    void test_createCompArea_1() throws Exception {
+    void test_createCompArea_1()  {
         ObjectMapper objectMapper = new ObjectMapper(); // Initialize ObjectMapper
 
         // Arrange
@@ -289,7 +289,7 @@ class CompetencyAreaServiceImplTest {
                  Constants.COMPETENCY_AREA_TYPE).asText().isEmpty()), (!titles.containsKey(eachCompArea.get(Constants.COMPETENCY_AREA_TYPE).asText().toLowerCase()))
     */
     @Test
-    void test_loadCompetencyArea_1() throws Exception {
+    void test_loadCompetencyArea_1()  {
         // Arrange
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test data".getBytes());
         String token = "validToken";
@@ -371,7 +371,7 @@ class CompetencyAreaServiceImplTest {
      * This test verifies that the method throws a CustomException with the correct status code when there's an error in ES.
      */
     @Test
-    void test_loadCompetencyArea_esUtilServiceException() throws Exception {
+    void test_loadCompetencyArea_esUtilServiceException()  {
         when(esUtilService.isIndexPresent(any())).thenReturn(true);
         when(esUtilService.searchDocuments(any(), any())).thenThrow(new RuntimeException("ES error"));
 
@@ -477,7 +477,7 @@ class CompetencyAreaServiceImplTest {
      * and returns a successful response.
      */
     @Test
-    void test_searchCompArea_3() throws Exception {
+    void test_searchCompArea_3()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearchString");
@@ -627,7 +627,7 @@ class CompetencyAreaServiceImplTest {
     }
 
     @Test
-    void testCreateCompArea_ErrorWhileProcessing() throws Exception {
+    void testCreateCompArea_ErrorWhileProcessing()  {
         // Arrange
         ObjectMapper objectMapper1 = new ObjectMapper();
         ObjectNode input = objectMapper1.createObjectNode();
@@ -649,7 +649,7 @@ class CompetencyAreaServiceImplTest {
     }
 
     @Test
-    void testCreateCompArea_AlreadyPresent() throws Exception {
+    void testCreateCompArea_AlreadyPresent()  {
         // Arrange
         ObjectMapper objectMapper1 = new ObjectMapper();
         JsonNode input = objectMapper1.createObjectNode().put(Constants.TITLE, "Leadership");

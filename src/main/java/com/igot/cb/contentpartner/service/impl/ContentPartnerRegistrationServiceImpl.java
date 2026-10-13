@@ -343,7 +343,7 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
         }
 
         ArrayNode searchTagsArray = objectMapper.valueToTree(searchTags);
-        ((ObjectNode) formattedData).put(Constants.SEARCH_TAGS, searchTagsArray);
+        ((ObjectNode) formattedData).set(Constants.SEARCH_TAGS, searchTagsArray);
         return formattedData;
     }
 

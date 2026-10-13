@@ -18,6 +18,7 @@ import com.igot.cb.pores.elasticsearch.service.EsUtilService;
 import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
+import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
 import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
@@ -116,6 +117,7 @@ class DemandServiceImplTest {
         ReflectionTestUtils.setField(demandService, "redisTemplate", redisTemplate);
         ReflectionTestUtils.setField(demandService, "redisTemplateString", redisTemplateString);
         ReflectionTestUtils.setField(demandService, "logger", LoggerFactory.getLogger(DemandServiceImpl.class));
+        ReflectionTestUtils.setField(demandService, "payloadValidation", new PayloadValidation());
         // Mock statusTransitionConfig to avoid file read
         ReflectionTestUtils.setField(demandService, "statusTransitionConfig", mock(StatusTransitionConfig.class));
 
@@ -546,7 +548,7 @@ class DemandServiceImplTest {
      * calls the ES utility service, and returns a successful response.
      */
     @Test
-    void test_searchDemand_3() throws Exception {
+    void test_searchDemand_3()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("valid search");
@@ -582,7 +584,7 @@ class DemandServiceImplTest {
      * 4. It returns a CustomResponse with the correct status and search results
      */
     @Test
-    void test_searchDemand_4() throws Exception {
+    void test_searchDemand_4()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString(null);
