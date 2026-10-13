@@ -105,11 +105,11 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         jsonNodeEntity.setUpdatedOn(currentTime);
         jsonNodeEntity.setIsActive(true);
         AnnouncementEntity saveJsonEntity = announcementRepository.save(jsonNodeEntity);
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode jsonNode = objectMapper.createObjectNode();
+        ObjectMapper localObjectMapper = new ObjectMapper();
+        ObjectNode jsonNode = localObjectMapper.createObjectNode();
         jsonNode.set(Constants.ANNOUNCEMENT_ID, new TextNode(saveJsonEntity.getAnnouncementId()));
         jsonNode.setAll((ObjectNode) saveJsonEntity.getData());
-        Map<String, Object> map = objectMapper.convertValue(jsonNode, Map.class);
+        Map<String, Object> map = localObjectMapper.convertValue(jsonNode, Map.class);
         esUtilService.addDocument(Constants.ANNOUNCEMENT_INDEX, Constants.INDEX_TYPE, id, map, requiredJsonFilePath);
         cacheService.putCache(jsonNodeEntity.getAnnouncementId(), jsonNode);
         map.put(Constants.ANNOUNCEMENT_ID, id);
@@ -143,8 +143,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
       response.setResponseCode(HttpStatus.OK);
       return response;
     } catch (Exception e) {
-      logger.error("error while processing", e);
-      throw new RuntimeException(e);
+      throw new CustomException(Constants.ERROR, "error while processing: " + e.getMessage(),
+          HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -162,8 +162,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     }
     String searchString = searchCriteria.getSearchString();
     if (searchString != null && searchString.length() < 2) {
-      createErrorResponse(response, "Minimum 3 characters are required to search",
-          HttpStatus.BAD_REQUEST,
+      createErrorResponse(response, HttpStatus.BAD_REQUEST,
           Constants.FAILED_CONST);
       return response;
     }
@@ -189,7 +188,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
       createSuccessResponse(response);
       return response;
     } catch (Exception e) {
-      createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+      createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR,
           Constants.FAILED_CONST);
       redisTemplate.opsForValue()
           .set(generateRedisJwtTokenKey(searchCriteria), searchResult, searchResultRedisTtl,
@@ -199,7 +198,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
   }
 
   public void createErrorResponse(
-      CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+      CustomResponse response, HttpStatus httpStatus, String status) {
     response.setParams(new RespParam());
     response.getParams().setStatus(status);
     response.setResponseCode(httpStatus);

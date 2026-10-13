@@ -22,8 +22,10 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.igot.cb.pores.exceptions.CustomException;
 
 @Slf4j
 @Service
@@ -37,7 +39,7 @@ public class FileProcessService {
       return validateFileAndProcessRows(incomingFile);
     } catch (Exception e) {
       log.error("Error occurred during file processing: {}", e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -46,7 +48,7 @@ public class FileProcessService {
     log.info("DesignationServiceImpl::validateFileAndProcessRows");
     String fileName = file.getOriginalFilename();
     if (fileName == null) {
-      throw new RuntimeException("File name is null");
+      throw new CustomException(Constants.ERROR, "File name is null", HttpStatus.BAD_REQUEST);
     }
 
     try (InputStream inputStream = file.getInputStream()) {
@@ -58,11 +60,11 @@ public class FileProcessService {
       } else if (fileName.endsWith(".csv")) {
         return processCsvAndSendMessage(inputStream);
       } else {
-        throw new RuntimeException("Unsupported file type: " + fileName);
+        throw new CustomException(Constants.ERROR, "Unsupported file type: " + fileName, HttpStatus.BAD_REQUEST);
       }
     } catch (IOException e) {
       log.error("Error while processing file: {}", e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -110,7 +112,7 @@ public class FileProcessService {
       return dataRows;
     } catch (Exception e) {
       log.error(e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -147,7 +149,7 @@ public class FileProcessService {
       log.info("Number of Data Rows Processed: " + dataRows.size());
     } catch (Exception e) {
       log.error(e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return dataRows;
   }

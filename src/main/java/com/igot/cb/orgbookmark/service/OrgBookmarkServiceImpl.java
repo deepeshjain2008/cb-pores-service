@@ -91,31 +91,30 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
             jsonNodeEntity.setUpdatedOn(currentTime);
 
             String category = orgDetails.get(Constants.CATEGORY).asText();
-            if (cbServerProperties.getBookmarkDuplicateNotAllowedCategory().contains(category)) {
-                if (isActiveBookMarkAvailableForOrg(orgDetails)) {
-                    response.getParams().setStatus(Constants.FAILED);
-                    response.getParams().setErrMsg(MessageFormat.format(Constants.BOOKMARK_ALREADY_AVAILABLE, orgDetails.get(Constants.ORG_ID).asText(), category));
-                    response.setResponseCode(HttpStatus.BAD_REQUEST);
-                    return response;
-                }
+            if (cbServerProperties.getBookmarkDuplicateNotAllowedCategory().contains(category)
+                    && isActiveBookMarkAvailableForOrg(orgDetails)) {
+                response.getParams().setStatus(Constants.FAILED);
+                response.getParams().setErrMsg(MessageFormat.format(Constants.BOOKMARK_ALREADY_AVAILABLE, orgDetails.get(Constants.ORG_ID).asText(), category));
+                response.setResponseCode(HttpStatus.BAD_REQUEST);
+                return response;
             }
             OrgBookmarkEntity saveJsonEntity = orgBookmarkRepository.save(jsonNodeEntity);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            ObjectNode jsonNode = objectMapper.createObjectNode();
+            ObjectMapper localObjectMapper = new ObjectMapper();
+            ObjectNode jsonNode = localObjectMapper.createObjectNode();
             jsonNode.set(Constants.ORG_BOOKMARK_ID, new TextNode(saveJsonEntity.getOrgBookmarkId()));
             jsonNode.setAll((ObjectNode) saveJsonEntity.getData());
             jsonNode.set(Constants.CREATED_ON, new TextNode(convertTimeStampToDate(jsonNodeEntity.getCreatedOn().getTime())));
             jsonNode.set(Constants.UPDATED_ON, new TextNode(convertTimeStampToDate(jsonNodeEntity.getUpdatedOn().getTime())));
 
 
-            Map<String, Object> map = objectMapper.convertValue(jsonNode, Map.class);
+            Map<String, Object> map = localObjectMapper.convertValue(jsonNode, Map.class);
             esUtilService.addDocument(Constants.INDEX_NAME_FOR_ORG_BOOKMARK, Constants.INDEX_TYPE, id, map, cbServerProperties.getElasticBookmarkJsonPath());
 
             JsonNode orgListNode = orgDetails.get(Constants.ORG_LIST);
-            List<String> orgList = objectMapper.convertValue(orgListNode, List.class);
+            List<String> orgList = localObjectMapper.convertValue(orgListNode, List.class);
             List<Map<String, Object>> orgSearchList = searchOrg(Constants.IDENTIFIER, orgList);
-            ((ObjectNode) saveJsonEntity.getData()).put(Constants.ORG_LIST, objectMapper.convertValue(orgSearchList, JsonNode.class));
+            ((ObjectNode) saveJsonEntity.getData()).put(Constants.ORG_LIST, localObjectMapper.convertValue(orgSearchList, JsonNode.class));
 
             cacheService.putCache(Constants.REDIS_ORG_BOOKMARK_KEY + Constants.UNDER_SCORE  + jsonNodeEntity.getOrgBookmarkId(), saveJsonEntity.getData());
             log.info("org List created");
@@ -126,7 +125,6 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
             response.getResult().put(Constants.ORG_BOOKMARK_ID, id);
             return response;
         } catch (Exception e) {
-            logger.error("Error occurred while creating orgList", e);
             throw new CustomException("error while processing", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -173,20 +171,20 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
                 return response;
             }
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            ObjectNode jsonNode = objectMapper.createObjectNode();
+            ObjectMapper localObjectMapper = new ObjectMapper();
+            ObjectNode jsonNode = localObjectMapper.createObjectNode();
             jsonNode.set(Constants.ORG_BOOKMARK_ID, new TextNode(orgBookmarkId));
             jsonNode.setAll((ObjectNode) orgBookmarkEntityUpdated.getData());
             jsonNode.set(Constants.CREATED_ON, new TextNode(convertTimeStampToDate(orgBookmarkEntityUpdated.getCreatedOn().getTime())));
             jsonNode.set(Constants.UPDATED_ON, new TextNode(convertTimeStampToDate(orgBookmarkEntityUpdated.getUpdatedOn().getTime())));
 
-            Map<String, Object> map = objectMapper.convertValue(jsonNode, Map.class);
+            Map<String, Object> map = localObjectMapper.convertValue(jsonNode, Map.class);
             esUtilService.updateDocument(Constants.INDEX_NAME_FOR_ORG_BOOKMARK, Constants.INDEX_TYPE, orgBookmarkId, map, cbServerProperties.getElasticBookmarkJsonPath());
 
             JsonNode orgListNode = orgDetails.get(Constants.ORG_LIST);
-            List<String> orgList = objectMapper.convertValue(orgListNode, List.class);
+            List<String> orgList = localObjectMapper.convertValue(orgListNode, List.class);
             List<Map<String, Object>> orgSearchList = searchOrg(Constants.IDENTIFIER, orgList);
-            ((ObjectNode) orgBookmarkEntityUpdated.getData()).put(Constants.ORG_LIST, objectMapper.convertValue(orgSearchList, JsonNode.class));
+            ((ObjectNode) orgBookmarkEntityUpdated.getData()).put(Constants.ORG_LIST, localObjectMapper.convertValue(orgSearchList, JsonNode.class));
 
             cacheService.putCache(Constants.REDIS_ORG_BOOKMARK_KEY + Constants.UNDER_SCORE  + orgBookmarkEntityUpdated.getOrgBookmarkId(), orgBookmarkEntityUpdated.getData());
             log.info("org List created");
@@ -197,7 +195,6 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
             response.getResult().put(Constants.ORG_BOOKMARK_ID, orgBookmarkId);
             return response;
         } catch (Exception e) {
-            logger.error("Error occurred while creating orgList", e);
             throw new CustomException("error while processing", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -264,8 +261,7 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
         }
         String searchString = searchCriteria.getSearchString();
         if (searchString != null && searchString.length() < 2) {
-            createErrorResponse(response, "Minimum 3 characters are required to search",
-                    HttpStatus.BAD_REQUEST,
+            createErrorResponse(response, HttpStatus.BAD_REQUEST,
                     Constants.FAILED_CONST);
             return response;
         }
@@ -276,7 +272,7 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
             createSuccessResponse(response);
             return response;
         } catch (Exception e) {
-            createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, Constants.FAILED_CONST);
+            createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, Constants.FAILED_CONST);
             redisTemplate.opsForValue()
                     .set(generateRedisJwtTokenKey(searchCriteria), searchResult, cbServerProperties.getSearchResultRedisTtl(),
                             TimeUnit.SECONDS);
@@ -314,7 +310,7 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
                         josnEntity.setData(data);
                         josnEntity.setOrgBookmarkId(id);
                         josnEntity.setUpdatedOn(currentTime);
-                        OrgBookmarkEntity updateJsonEntity = orgBookmarkRepository.save(josnEntity);
+                        orgBookmarkRepository.save(josnEntity);
                         Map<String, Object> map = objectMapper.convertValue(data, Map.class);
                         esUtilService.updateDocument(Constants.INDEX_NAME_FOR_ORG_BOOKMARK, Constants.INDEX_TYPE, id, map, cbServerProperties.getElasticBookmarkJsonPath());
                         cacheService.putCache(id, data);
@@ -361,7 +357,7 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
                 for (ValidationMessage message : validationMessages) {
                     errorMessage.append(message.getMessage()).append("\n");
                 }
-                logger.error("Validation Error", errorMessage.toString());
+                logger.error("Validation Error: {}", errorMessage.toString());
                 throw new CustomException("Validation Error", errorMessage.toString(), HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
@@ -377,9 +373,8 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
     }
 
     public void createErrorResponse(
-            CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+            CustomResponse response, HttpStatus httpStatus, String status) {
         response.setParams(new RespParam());
-        //response.getParams().setErrorMsg(errorMessage);
         response.getParams().setStatus(status);
         response.setResponseCode(httpStatus);
     }

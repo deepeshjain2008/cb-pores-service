@@ -43,10 +43,10 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
         List<String> fields = new ArrayList<>();
         List<Map<String, Object>> response = cassandraOperation.getRecordsByPropertiesByKey(Constants.DATABASE, Constants.TABLE, propertyMap, fields, interestId);
         // Parse the "data" field from its string representation into a JSON object
-        for (Map<String, Object> record : response) {
-            parseStringifiedField(record, Constants.DATA);
-            parseStringifiedField(record, Constants.DEMAND_ID);
-            parseStringifiedField(record, Constants.USER_ID);
+        for (Map<String, Object> interestRecord : response) {
+            parseStringifiedField(interestRecord, Constants.DATA);
+            parseStringifiedField(interestRecord, Constants.DEMAND_ID);
+            parseStringifiedField(interestRecord, Constants.USER_ID);
         }
         return response;
     }
@@ -77,26 +77,17 @@ public class KarmaQuestServiceImpl implements KarmaQuestService {
         return cassandraOperation.insertRecord(Constants.DATABASE, Constants.TABLE, parameterisedMap);
     }
 
-   /* @Override
-    public CustomResponse updateDemand(JsonNode demandsDetails) {
-        log.info("DemandServiceImpl::updateDemand");
-        if (!demandsDetails.get("id").isEmpty()){
-
-        }
-        return null;
-    }*/
-
-    private void parseStringifiedField(Map<String, Object> record, String fieldName) {
-        if (record.containsKey(fieldName)) {
-            String fieldValue = (String) record.get(fieldName);
+    private void parseStringifiedField(Map<String, Object> fieldRecord, String fieldName) {
+        if (fieldRecord.containsKey(fieldName)) {
+            String fieldValue = (String) fieldRecord.get(fieldName);
             try {
                 if (fieldName.equals(Constants.DATA)) {
                     Map<String, Object> dataMap = objectMapper.readValue(fieldValue, new TypeReference<Map<String,Object>>(){});
-                    record.put(fieldName, dataMap);
+                    fieldRecord.put(fieldName, dataMap);
                 } else {
                     // For user_id and other stringified fields, simply remove leading and trailing quotation marks
                     fieldValue = fieldValue.replaceAll(Constants.REGEX, "");
-                    record.put(fieldName, fieldValue);
+                    fieldRecord.put(fieldName, fieldValue);
                 }
             } catch (Exception e) {
                 logger.error("Error parsing JSON field {}: {}", fieldName, e.getMessage());

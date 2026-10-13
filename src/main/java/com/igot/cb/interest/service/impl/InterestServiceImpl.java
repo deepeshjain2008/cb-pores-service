@@ -162,7 +162,6 @@ public class InterestServiceImpl implements InterestService {
         return response;
       }
     } catch (Exception e) {
-      logger.error("Error occurred while creating Interest", e);
       throw new CustomException("error while processing", e.getMessage(),
           HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -182,8 +181,7 @@ public class InterestServiceImpl implements InterestService {
     }
     String searchString = searchCriteria.getSearchString();
     if (searchString != null && searchString.length() < 2) {
-      createErrorResponse(response, "Minimum 3 characters are required to search",
-          HttpStatus.BAD_REQUEST,
+      createErrorResponse(response, HttpStatus.BAD_REQUEST,
           Constants.FAILED_CONST);
       return response;
     }
@@ -194,7 +192,7 @@ public class InterestServiceImpl implements InterestService {
       createSuccessResponse(response);
       return response;
     } catch (Exception e) {
-      createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+      createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR,
           Constants.FAILED_CONST);
       redisTemplate.opsForValue()
           .set(generateRedisJwtTokenKey(searchCriteria), searchResult, searchResultRedisTtl,
@@ -410,7 +408,7 @@ public class InterestServiceImpl implements InterestService {
   }
 
   public void createErrorResponse(
-      CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+      CustomResponse response, HttpStatus httpStatus, String status) {
     response.setParams(new RespParam());
     response.getParams().setStatus(status);
     response.setResponseCode(httpStatus);

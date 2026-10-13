@@ -112,18 +112,16 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
       }
       jsonNode.forEach(
           eachCompSubTheme -> {
-            if (!eachCompSubTheme.isNull() &&  eachCompSubTheme.has(Constants.COMPETENCY_SUB_THEME_TYPE) && !eachCompSubTheme.get(Constants.COMPETENCY_SUB_THEME_TYPE).isNull()){
-              if (!titles.containsKey(eachCompSubTheme.get(Constants.COMPETENCY_SUB_THEME_TYPE).asText().toLowerCase())) {
-                if (!eachCompSubTheme.get(
-                    Constants.COMPETENCY_SUB_THEME_TYPE).asText().isEmpty()){
-                  String formattedId = String.format("COMSUBTHEME-%06d", startingId.incrementAndGet());
-                  JsonNode dataNode = validateAndSetData(eachCompSubTheme, userId, formattedId);
-                  CompetencySubThemeEntity competencySubThemeEntity = createCompetenecySubThemeEntity(dataNode,formattedId);
-                  competencySubThemeEntityList.add(competencySubThemeEntity);
-                  competencySubThemeDataNodesList.add(dataNode);
-                  titles.put(dataNode.get(Constants.TITLE).asText().toLowerCase(), true);
-                }
-              }
+            if (!eachCompSubTheme.isNull() && eachCompSubTheme.has(Constants.COMPETENCY_SUB_THEME_TYPE)
+                && !eachCompSubTheme.get(Constants.COMPETENCY_SUB_THEME_TYPE).isNull()
+                && !titles.containsKey(eachCompSubTheme.get(Constants.COMPETENCY_SUB_THEME_TYPE).asText().toLowerCase())
+                && !eachCompSubTheme.get(Constants.COMPETENCY_SUB_THEME_TYPE).asText().isEmpty()) {
+              String formattedId = String.format("COMSUBTHEME-%06d", startingId.incrementAndGet());
+              JsonNode dataNode = validateAndSetData(eachCompSubTheme, userId, formattedId);
+              CompetencySubThemeEntity competencySubThemeEntity = createCompetenecySubThemeEntity(dataNode,formattedId);
+              competencySubThemeEntityList.add(competencySubThemeEntity);
+              competencySubThemeDataNodesList.add(dataNode);
+              titles.put(dataNode.get(Constants.TITLE).asText().toLowerCase(), true);
             }
           });
       poresBulkSave(competencySubThemeEntityList, competencySubThemeDataNodesList);
@@ -221,8 +219,7 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
     }
     String searchString = searchCriteria.getSearchString();
     if (searchString != null && searchString.length() < 2) {
-      createErrorResponse(response, "Minimum 3 characters are required to search",
-          HttpStatus.BAD_REQUEST,
+      createErrorResponse(response, HttpStatus.BAD_REQUEST,
           Constants.FAILED_CONST);
       return response;
     }
@@ -233,7 +230,7 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
       createSuccessResponse(response);
       return response;
     } catch (Exception e) {
-      createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+      createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR,
           Constants.FAILED_CONST);
       redisTemplate.opsForValue()
           .set(generateRedisJwtTokenKey(searchCriteria), searchResult, searchResultRedisTtl,
@@ -391,7 +388,7 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
       }
     }catch (Exception e){
       log.error("Error while processing file: {}", e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -595,7 +592,7 @@ public class CompetencySubThemeServiceImpl implements CompetencySubThemeService 
   }
 
   public void createErrorResponse(
-      CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+      CustomResponse response, HttpStatus httpStatus, String status) {
     response.setParams(new RespParam());
     response.getParams().setStatus(status);
     response.setResponseCode(httpStatus);

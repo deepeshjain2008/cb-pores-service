@@ -103,8 +103,8 @@ public class ContentServiceImpl implements ContentService {
 
   public Object fetchResult(String uri) {
     log.info("ContentServiceImpl::fetchResult:inside");
-    ObjectMapper mapper = new ObjectMapper();
-    mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    ObjectMapper localMapper = new ObjectMapper();
+    localMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     Object response = null;
     try {
       if (log.isDebugEnabled()) {
@@ -121,13 +121,15 @@ public class ContentServiceImpl implements ContentService {
             new TypeReference<HashMap<String, Object>>() {
             });
       } catch (Exception e1) {
+        // response body isn't valid JSON; keep response as whatever was already set
       }
       log.error("Error received: " + e.getResponseBodyAsString(), e);
     } catch (Exception e) {
       log.error(e.toString());
       try {
-        log.warn("Error Response: " + mapper.writeValueAsString(response));
+        log.warn("Error Response: " + localMapper.writeValueAsString(response));
       } catch (Exception e1) {
+        // response isn't serializable; nothing more to log
       }
     }
     return response;

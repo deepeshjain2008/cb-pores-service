@@ -23,8 +23,7 @@ public class ContentPartnerController {
 
     @PostMapping("/v1/update")
     public ResponseEntity<ApiResponse> update(@RequestBody JsonNode contentPartnerDetails) {
-        ApiResponse response = partnerService.createOrUpdate(contentPartnerDetails);
-        return new ResponseEntity<>(response, response.getResponseCode());
+        return create(contentPartnerDetails);
     }
 
     @GetMapping("/v1/read/{id}")

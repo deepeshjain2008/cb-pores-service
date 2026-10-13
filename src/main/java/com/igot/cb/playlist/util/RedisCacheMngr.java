@@ -1,9 +1,9 @@
 package com.igot.cb.playlist.util;
 
 import com.igot.cb.pores.config.RedisConfig;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,17 +35,16 @@ public class RedisCacheMngr {
     }
   }
 
-  public List<String> hget(String key, int index, String... fields) {
+  public List<String> hget(String key, String... fields) {
     try {
-      return hashOperations.multiGet(key, List.of(fields)).stream()
-              .collect(Collectors.toList());
+      return hashOperations.multiGet(key, List.of(fields)).stream().toList();
     } catch (Exception e) {
       log.error("Error getting hash fields from cache: {}", e.getMessage());
-      return null;
+      return Collections.emptyList();
     }
   }
 
-  public void hset(String key, int index, Map<String, String> fieldValues) {
+  public void hset(String key, Map<String, String> fieldValues) {
     try {
       hashOperations.putAll(key, fieldValues);
     } catch (Exception e) {
@@ -54,7 +53,7 @@ public class RedisCacheMngr {
   }
 
   // Method to delete a field from a hash
-  public Long hdel(String key, String field, int index) {
+  public Long hdel(String key, String field) {
     try {
       Long result = hashOperations.delete(key, field);
       if (result == 1) {

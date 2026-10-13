@@ -337,10 +337,8 @@ public class ContentPartnerRegistrationServiceImpl implements ContentPartnerRegi
 
         if (formattedData.has(Constants.CONTENT_PARTNER_NAME)) {
             String partnerName = formattedData.get(Constants.CONTENT_PARTNER_NAME).textValue();
-            if (StringUtils.isNotBlank(partnerName)) {
-                if (!searchTags.contains(partnerName.toLowerCase())) {
-                    searchTags.add(partnerName.toLowerCase());
-                }
+            if (StringUtils.isNotBlank(partnerName) && !searchTags.contains(partnerName.toLowerCase())) {
+                searchTags.add(partnerName.toLowerCase());
             }
         }
 

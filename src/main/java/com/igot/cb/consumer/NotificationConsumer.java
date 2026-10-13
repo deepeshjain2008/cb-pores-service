@@ -16,6 +16,7 @@ import org.apache.velocity.app.VelocityEngine;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.igot.cb.pores.exceptions.CustomException;
 import org.springframework.http.HttpStatus;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -268,16 +269,16 @@ public class NotificationConsumer {
 
             // Additional notifications for SPV requests
             if (isSpvRequest) {
-                handleSpvRequest(status, request, mdoName, mailNotificationDetails);
+                handleSpvRequest(status, request, mailNotificationDetails);
             }
             logger.info(String.format("Completed request for content. Time taken: %d ms", System.currentTimeMillis() - startTime));
         } catch (Exception e) {
-            logger.error("Exception occurred while sending email: " + e.getMessage(), e);
+            logger.error("Exception occurred while sending email: {}", e.getMessage(), e);
         }
     }
 
     private String constructEmailTemplate(String templateName, Map<String, Object> params) {
-        String replacedHTML = new String();
+        String replacedHTML = "";
         try {
             Map<String, Object> propertyMap = new HashMap<>();
             propertyMap.put(Constants.NAME, templateName);
@@ -355,7 +356,7 @@ public class NotificationConsumer {
         try {
             logger.info(mapper.writeValueAsString(request));
             Map<String, Object> response = requestHandlerService.fetchResultUsingPost(builder.toString(), request, null);
-            logger.debug("The email notification is successfully sent, response is: " + response);
+            logger.debug("The email notification is successfully sent, response is: {}", response);
         } catch (Exception e) {
             logger.error("Exception while posting the data in notification service: ", e);
         }
@@ -396,16 +397,16 @@ public class NotificationConsumer {
                         HashMap<String, Object> personalDetails = (HashMap<String, Object>) profileDetails
                                 .get(Constants.PERSONAL_DETAILS);
                         if (!org.springframework.util.CollectionUtils.isEmpty(personalDetails)
-                                && personalDetails.get(Constants.PRIMARY_EMAIL) != null) {
-                            if (rootOrgIds.contains(rootOrgId))
-                                providerIdEmails.add((String) personalDetails.get(Constants.PRIMARY_EMAIL));
+                                && personalDetails.get(Constants.PRIMARY_EMAIL) != null
+                                && rootOrgIds.contains(rootOrgId)) {
+                            providerIdEmails.add((String) personalDetails.get(Constants.PRIMARY_EMAIL));
                         }
                     }
                 }
             }
         }
         if (org.springframework.util.CollectionUtils.isEmpty(providerIdEmails)) {
-            throw new Exception("Failed to find CBP Admin for OrgIds: " + rootOrgIds);
+            throw new CustomException(Constants.ERROR, "Failed to find CBP Admin for OrgIds: " + rootOrgIds, HttpStatus.NOT_FOUND);
         }
         logger.info("CBP Admin emails fetched successfully: " + providerIdEmails);
         return providerIdEmails;
@@ -440,7 +441,7 @@ public class NotificationConsumer {
         return emailResponseList;
     }
 
-    private void handleSpvRequest(String status, Map<String, Object> request, String mdoName, Map<String, Object> mailNotificationDetails) {
+    private void handleSpvRequest(String status, Map<String, Object> request, Map<String, Object> mailNotificationDetails) {
         logger.info("handling spvRequest");
         List<String> emails;
         String subjectLine;

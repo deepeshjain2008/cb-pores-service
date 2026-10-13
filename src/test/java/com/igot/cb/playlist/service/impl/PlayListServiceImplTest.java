@@ -249,7 +249,7 @@ class PlayListServiceImplTest {
 
         when(playListRepository.findByIdAndIsActive(id, true)).thenReturn(playListEntity);
         when(playListRepository.save(any(PlayListEntity.class))).thenReturn(playListEntity);
-        when(redisCacheMngr.hdel(anyString(), anyString(), anyInt())).thenReturn(1L);
+        when(redisCacheMngr.hdel(anyString(), anyString())).thenReturn(1L);
 
         // Act
         ApiResponse response = playListService.delete(id);
@@ -395,7 +395,7 @@ class PlayListServiceImplTest {
         String orgId = "testOrgId";
         String requestType = "testRequestType";
 
-        when(redisCacheMngr.hget(eq(id), anyInt(), eq(orgId)))
+        when(redisCacheMngr.hget(eq(id), eq(orgId)))
                 .thenReturn(Collections.singletonList("[{\"name\":\"playlist1\"}]"));
 
         PlayListEntity playListEntity = new PlayListEntity();
@@ -449,7 +449,7 @@ class PlayListServiceImplTest {
         // Arrange
         String id = "testId";
         String orgId = "testOrgId";
-        when(redisCacheMngr.hget(id, 0, orgId)).thenReturn(null);
+        when(redisCacheMngr.hget(id, orgId)).thenReturn(null);
         when(playListRepository.findByOrgIdAndRequestTypeAndIsActive(orgId, "", true)).thenReturn(java.util.Collections.emptyList());
 
         // Act
@@ -470,9 +470,7 @@ class PlayListServiceImplTest {
         // Arrange
         String id = "org123requestType";
         String orgId = "org123";
-        int redisInsightIndex = 0;
-
-        when(redisCacheMngr.hget(id, redisInsightIndex, orgId)).thenReturn(null);
+        when(redisCacheMngr.hget(id, orgId)).thenReturn(null);
         when(playListRepository.findByOrgIdAndRequestTypeAndIsActive(orgId, "requestType", true))
             .thenReturn(new ArrayList<>());
 
@@ -714,7 +712,7 @@ class PlayListServiceImplTest {
         when(jsonNodeEntity.getOrgId()).thenReturn(orgId);
 
         // Stub redis hset call (void method)
-        doNothing().when(redisCacheMngr).hset(eq(key), anyInt(), anyMap());
+        doNothing().when(redisCacheMngr).hset(eq(key), anyMap());
 
         // Act
         ApiResponse response = playListService.updatePlayList(playListDetails);

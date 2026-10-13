@@ -179,7 +179,6 @@ public class DesignationServiceImpl implements DesignationService {
         poresBulkSave(designationEntityList, designationDataNodeList);
 
       }catch (Exception e){
-        logger.error(e.getMessage());
         throw new CustomException("error while bulk indexing the data in es", e.getMessage(),
             HttpStatus.INTERNAL_SERVER_ERROR);
       }
@@ -329,7 +328,7 @@ public class DesignationServiceImpl implements DesignationService {
     reqBodyMap.put(Constants.REF_NODES, termIdentifier);
     CustomResponse desgResponse = updateIdentifiersToDesignation(objectMapper.valueToTree(reqBodyMap));
     if (desgResponse.getResponseCode() != HttpStatus.OK) {
-      log.error("Failed to update designation: " + response.getParams().getErr());
+      log.error("Failed to update designation: {}", response.getParams().getErr());
       setTermFailure(response, "Failed to update designation.", HttpStatus.INTERNAL_SERVER_ERROR);
     } else {
       response.getResult().put(Constants.NODE_ID, termIdentifier);
@@ -449,7 +448,7 @@ public class DesignationServiceImpl implements DesignationService {
       }
     } catch (Exception e) {
       log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -590,8 +589,7 @@ public class DesignationServiceImpl implements DesignationService {
     }
     String searchString = searchCriteria.getSearchString();
     if (searchString != null && searchString.length() < 2) {
-      createErrorResponse(response, "Minimum 3 characters are required to search",
-          HttpStatus.BAD_REQUEST,
+      createErrorResponse(response, HttpStatus.BAD_REQUEST,
           Constants.FAILED_CONST);
       return response;
     }
@@ -612,7 +610,7 @@ public class DesignationServiceImpl implements DesignationService {
       createSuccessResponse(response);
       return response;
     } catch (Exception e) {
-      createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+      createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR,
           Constants.FAILED_CONST);
       log.info("DesignationServiceImpl::searchDesignation::error occurred while searching the designation",response);
       return response;
@@ -625,7 +623,7 @@ public class DesignationServiceImpl implements DesignationService {
       return validateFileAndProcessRows(incomingFile);
     } catch (Exception e) {
       log.error("Error occurred during file processing: {}", e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -634,7 +632,7 @@ public class DesignationServiceImpl implements DesignationService {
     log.info("DesignationServiceImpl::validateFileAndProcessRows");
     String fileName = file.getOriginalFilename();
     if (fileName == null) {
-      throw new RuntimeException("File name is null");
+      throw new CustomException(Constants.ERROR, "File name is null", HttpStatus.BAD_REQUEST);
     }
 
     try (InputStream inputStream = file.getInputStream()) {
@@ -646,11 +644,11 @@ public class DesignationServiceImpl implements DesignationService {
       } else if (fileName.endsWith(".csv")) {
         return processCsvAndSendMessage(inputStream);
       } else {
-        throw new RuntimeException("Unsupported file type: " + fileName);
+        throw new CustomException(Constants.ERROR, "Unsupported file type: " + fileName, HttpStatus.BAD_REQUEST);
       }
     } catch (IOException e) {
       log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -689,7 +687,6 @@ public class DesignationServiceImpl implements DesignationService {
             rowData.put(excelHeader, cellValue);
           }
         }
-//        log.info("Data Rows: " + rowData);
         if (allBlank) {
           break; // If all cells are blank in the current row, stop processing
         }
@@ -699,7 +696,7 @@ public class DesignationServiceImpl implements DesignationService {
       return dataRows;
     } catch (Exception e) {
       log.error(e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -728,7 +725,6 @@ public class DesignationServiceImpl implements DesignationService {
           }
           rowData.put(header, cellValue);
         }
-//        log.info("Data Rows: " + rowData);
         if (allBlank) {
           break; // If all cells are blank in the current row, stop processing
         }
@@ -737,7 +733,7 @@ public class DesignationServiceImpl implements DesignationService {
       log.info("Number of Data Rows Processed: " + dataRows.size());
     } catch (Exception e) {
       log.error(e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return dataRows;
   }
@@ -875,7 +871,7 @@ public class DesignationServiceImpl implements DesignationService {
       }
     } catch (Exception e) {
       log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return response;
   }
@@ -907,7 +903,7 @@ public class DesignationServiceImpl implements DesignationService {
   }
 
   public void createErrorResponse(
-      CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+      CustomResponse response, HttpStatus httpStatus, String status) {
     response.setParams(new RespParam());
     response.getParams().setStatus(status);
     response.setResponseCode(httpStatus);
@@ -918,7 +914,7 @@ public class DesignationServiceImpl implements DesignationService {
     try {
       // Build URL and fetch framework data
       String url = cbServerProperties.getKnowledgeMS() + cbServerProperties.getOdcsFrameworkRead() + "/" + frameworkId;
-      logger.info("printin frameworkRead url "+url);
+      logger.info("printin frameworkRead url {}", url);
       Map<String, Object> frameworkResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResult(url);
 
       if (MapUtils.isEmpty(frameworkResponse)) {

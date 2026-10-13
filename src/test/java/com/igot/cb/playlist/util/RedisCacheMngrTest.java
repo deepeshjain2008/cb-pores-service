@@ -55,15 +55,15 @@ class RedisCacheMngrTest {
     @Test
     void testHgetSuccess() {
         when(hashOperations.multiGet(eq("hashKey"), anyList())).thenReturn(List.of("val1", "val2"));
-        List<String> result = redisCacheMngr.hget("hashKey", 0, "field1", "field2");
+        List<String> result = redisCacheMngr.hget("hashKey", "field1", "field2");
         assertEquals(List.of("val1", "val2"), result);
     }
 
     @Test
     void testHgetException() {
         when(hashOperations.multiGet(eq("hashKey"), anyList())).thenThrow(new RuntimeException("Redis error"));
-        List<String> result = redisCacheMngr.hget("hashKey", 0, "field1", "field2");
-        assertNull(result);
+        List<String> result = redisCacheMngr.hget("hashKey", "field1", "field2");
+        assertEquals(List.of(), result);
     }
 
 
@@ -71,14 +71,14 @@ class RedisCacheMngrTest {
     void testHsetException() {
         doThrow(new RuntimeException("Redis error")).when(hashOperations).putAll(anyString(), anyMap());
         Map<String, String> data = Map.of("field1", "val1");
-        assertDoesNotThrow(() -> redisCacheMngr.hset("hashKey", 0, data));
+        assertDoesNotThrow(() -> redisCacheMngr.hset("hashKey", data));
     }
 
 
     @Test
     void testHdelException() {
         when(hashOperations.delete("hashKey", "field1")).thenThrow(new RuntimeException("Redis error"));
-        Long result = redisCacheMngr.hdel("hashKey", "field1", 0);
+        Long result = redisCacheMngr.hdel("hashKey", "field1");
         assertNull(result);
     }
 }

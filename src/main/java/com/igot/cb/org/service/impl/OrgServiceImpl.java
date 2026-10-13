@@ -106,7 +106,7 @@ public class OrgServiceImpl implements OrgService {
 
     private ApiResponse createAndPublishFramework(ApiResponse response, String frameworkName, String orgId,
             String termName, String userId, String userAuthToken) {
-        String name = processFrameworkCreate(frameworkName, orgId, true);
+        String name = processFrameworkCreate(frameworkName, orgId);
         log.info(COPY_FRAMEWORK_ID_LOG, name);
         if (StringUtils.isEmpty(name)) {
             log.info("unable to copy a framework");
@@ -137,46 +137,6 @@ public class OrgServiceImpl implements OrgService {
         }
     }
 
-    private ApiResponse frameworkRead(String frameworkId) {
-        ApiResponse response = ProjectUtil.createDefaultResponse("");
-        try {
-            StringBuilder strUrl = new StringBuilder(cbServerProperties.getKnowledgeMS());
-            strUrl.append(cbServerProperties.getOdcsFrameworkRead()).append("/").append(frameworkId);
-            Map<String, Object> framworkResponse = (Map<String, Object>) outboundRequestHandlerServiceImpl.fetchResult(strUrl.toString());
-            if (null != framworkResponse) {
-                if (Constants.OK.equalsIgnoreCase((String) framworkResponse.get(Constants.RESPONSE_CODE))) {
-                    Map<String, Object> resultMap = (Map<String, Object>) framworkResponse.get(Constants.RESULT);
-                    Map<String, Object> framework = (Map<String, Object>) resultMap.get(Constants.FRAMEWORK);
-                    response.getResult().put(Constants.FRAMEWORK, framework);
-                } else {
-                    response.setResponseCode(HttpStatus.NOT_FOUND);
-                    response.getParams().setErr("Data not found with id : " + frameworkId);
-                }
-            } else {
-                response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-                response.getParams().setErr("Failed to read the framework details for Id : " + frameworkId);
-            }
-        } catch (Exception e) {
-            log.error("Failed to read framework with Id: " + frameworkId, e);
-            response.getParams().setErr("Failed to read framework: " + e.getMessage());
-            response.getParams().setStatus(Constants.FAILED);
-            response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return response;
-    }
-
-    private static List<Map<String, String>> createChannels(String channelId) {
-        Map<String, String> channel = createChannel(channelId);
-        List<Map<String, String>> channels = new ArrayList<>();
-        channels.add(channel);
-        return channels;
-    }
-
-    private static Map<String, String> createChannel(String channelId) {
-        Map<String, String> channel = new HashMap<>();
-        channel.put(Constants.IDENTIFIER, channelId);
-        return channel;
-    }
     public boolean isSpvRequest(String userId, List<String> requiredRoles) {
         Map<String, String> header = new HashMap<>();
         log.info("isSpvRequest started for userId: {}", userId);
@@ -185,7 +145,7 @@ public class OrgServiceImpl implements OrgService {
                         header);
         Map<String, Object> result = (Map<String, Object>) readData.get(Constants.RESULT);
         Map<String, Object> responseMap = (Map<String, Object>) result.get(Constants.RESPONSE);
-        List roles = (List) responseMap.get(Constants.ROLES);
+        List<String> roles = (List<String>) responseMap.get(Constants.ROLES);
 
         if (CollectionUtils.isNotEmpty(requiredRoles)) {
             for (String requiredRole : requiredRoles) {
@@ -197,7 +157,7 @@ public class OrgServiceImpl implements OrgService {
         return false;
     }
 
-    public String processFrameworkCreate(String masterFramework, String orgId, boolean includeOrgId) {
+    public String processFrameworkCreate(String masterFramework, String orgId) {
         String fwName = "";
         try {
             log.info("processFrameworkCreate started");
@@ -252,7 +212,7 @@ public class OrgServiceImpl implements OrgService {
         Map<String, Object> map = new HashMap<>();
         map.put(Constants.ID, orgId);
         map.put(Constants.FRAMEWORK_STATUS, Constants.FAILED);
-        Map<String, Object> updateOrgDetails = cassandraOperation.updateRecord(
+        cassandraOperation.updateRecord(
                 Constants.KEYSPACE_SUNBIRD, Constants.ORG_TABLE, map);
     }
 
@@ -268,7 +228,7 @@ public class OrgServiceImpl implements OrgService {
                 if (Constants.OK.equalsIgnoreCase((String) framworkResponse.get(Constants.RESPONSE_CODE))) {
                     Map<String, Object> resultMap = (Map<String, Object>) framworkResponse.get(Constants.RESULT);
                     Map<String, Object> framework = (Map<String, Object>) resultMap.get(Constants.FRAMEWORK);
-                    List categoriesList = (List<Map<String,Object>>) framework.get("categories");
+                    List<Map<String,Object>> categoriesList = (List<Map<String,Object>>) framework.get("categories");
                     Map<String,Object> map = (Map<String,Object>) categoriesList.get(0);
                     code = (String) map.get(Constants.CODE);
                     return code;
@@ -422,7 +382,7 @@ public class OrgServiceImpl implements OrgService {
                     .equalsIgnoreCase(Constants.FAILED)) {
                 String fwName = (String) orgDetail.get(Constants.ORG_HIERARCHY_FRAMEWORK_ID);
                 if (StringUtils.isBlank(fwName)) {
-                    String name = processFrameworkCreate(masterFramework,orgId, false);
+                    String name = processFrameworkCreate(masterFramework,orgId);
                     log.info(COPY_FRAMEWORK_ID_LOG,name);
                     if (StringUtils.isNotEmpty(name)) {
                         log.info(COPY_FRAMEWORK_ID_LOG,name);
