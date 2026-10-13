@@ -268,9 +268,10 @@ public class DesignationServiceImpl implements DesignationService {
         return response;
       }
       ApiResponse readResponse = frameworkRead(framework, parentCategory, termCode, ref_Id);
-      termCreationHelper.handleTermReadResponse(response, readResponse, request, name, ref_Id, framework, category,
-              "Failed to validate sector exists or not.", "Designation", "designation", Constants.DESIGNATION,
+      TermCreationHelper.TermCreationContext ctx = new TermCreationHelper.TermCreationContext(
+              request, name, ref_Id, framework, category, DESIGNATION_FIELD, "designation", Constants.DESIGNATION,
               this::updateIdentifiersToDesignation);
+      termCreationHelper.handleTermReadResponse(response, readResponse, "Failed to validate sector exists or not.", ctx);
     } catch (CustomException e) {
       response.getParams().setErr(e.getMessage());
       response.setResponseCode(HttpStatus.BAD_REQUEST);

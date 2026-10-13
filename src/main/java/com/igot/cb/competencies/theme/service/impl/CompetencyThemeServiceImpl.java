@@ -491,9 +491,9 @@ public class CompetencyThemeServiceImpl implements CompetencyThemeService {
         return response;
       }
       ApiResponse readResponse = designationService.frameworkRead(framework, parentCategory, termCode, ref_Id);
-      termCreationHelper.handleTermReadResponse(response, readResponse, request, name, ref_Id, framework, category,
-              "Failed to validate term exists or not.", "term", "term", Constants.TITLE,
-              this::updateCompTheme);
+      TermCreationHelper.TermCreationContext ctx = new TermCreationHelper.TermCreationContext(
+              request, name, ref_Id, framework, category, "term", "term", Constants.TITLE, this::updateCompTheme);
+      termCreationHelper.handleTermReadResponse(response, readResponse, "Failed to validate term exists or not.", ctx);
     } catch (CustomException e) {
       response.getParams().setErr(e.getMessage());
       response.setResponseCode(HttpStatus.BAD_REQUEST);

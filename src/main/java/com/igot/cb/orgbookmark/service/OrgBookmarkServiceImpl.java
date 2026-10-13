@@ -151,13 +151,8 @@ public class OrgBookmarkServiceImpl implements OrgBookmarkService {
                 while (fields.hasNext()) {
                     Map.Entry<String, JsonNode> field = fields.next();
                     String fieldName = field.getKey();
-                    // Check if the field is present in the update JsonNode
-                    if (dataNode.has(fieldName)) {
-                        // Update the main JsonNode with the value from the update JsonNode
-                        ((ObjectNode) dataNode).set(fieldName, orgDetails.get(fieldName));
-                    } else {
-                        ((ObjectNode) dataNode).set(fieldName, orgDetails.get(fieldName));
-                    }
+                    // Update (or add) the field on the main JsonNode with the value from the update JsonNode
+                    ((ObjectNode) dataNode).set(fieldName, orgDetails.get(fieldName));
                 }
                 ((ObjectNode) dataNode).remove(Constants.ORG_BOOKMARK_ID);
                 orgBookmarkEntity.get().setUpdatedOn(currentTime);

@@ -229,7 +229,7 @@ public class OrgServiceImpl implements OrgService {
                     Map<String, Object> resultMap = (Map<String, Object>) framworkResponse.get(Constants.RESULT);
                     Map<String, Object> framework = (Map<String, Object>) resultMap.get(Constants.FRAMEWORK);
                     List<Map<String,Object>> categoriesList = (List<Map<String,Object>>) framework.get("categories");
-                    Map<String,Object> map = (Map<String,Object>) categoriesList.get(0);
+                    Map<String,Object> map = categoriesList.get(0);
                     code = (String) map.get(Constants.CODE);
                     return code;
                 } else {
