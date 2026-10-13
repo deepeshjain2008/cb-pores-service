@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 
 public class ProjectUtil {
 
+  private ProjectUtil() {
+    throw new IllegalStateException("Utility class");
+  }
+
   public static ApiResponse createDefaultResponse(String api) {
     ApiResponse response = new ApiResponse();
     response.setId(api);

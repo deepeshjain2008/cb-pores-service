@@ -121,11 +121,10 @@ class CompetencySubThemeServiceImplTest {
     void test_createErrorResponse_1() {
         CompetencySubThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
-        String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         String status = "FAILED";
 
-        service.createErrorResponse(response, errorMessage, httpStatus, status);
+        service.createErrorResponse(response, httpStatus, status);
 
         assertEquals(status, response.getParams().getStatus());
         assertEquals(httpStatus, response.getResponseCode());
@@ -139,11 +138,10 @@ class CompetencySubThemeServiceImplTest {
     void test_createErrorResponse_setsAllFields() {
         CompetencySubThemeServiceImpl service = newUninitializedService();
         CustomResponse response = new CustomResponse();
-        String errorMessage = "Test error";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         String status = "FAILED";
 
-        service.createErrorResponse(response, errorMessage, httpStatus, status);
+        service.createErrorResponse(response, httpStatus, status);
 
         assertNotNull(response.getParams());
         assertEquals(status, response.getParams().getStatus());

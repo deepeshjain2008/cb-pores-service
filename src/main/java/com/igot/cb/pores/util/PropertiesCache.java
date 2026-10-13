@@ -1,8 +1,6 @@
 package com.igot.cb.pores.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,9 +15,6 @@ import java.util.Properties;
  * Also handles environment variable overrides for properties.
  */
 public class PropertiesCache {
-    // Logger for logging messages
-    private final Logger logger = LogManager.getLogger(getClass());
-
     // Array of file names from which properties are loaded
     private final String[] fileName = {
             "cassandra.config.properties",
@@ -40,6 +35,7 @@ public class PropertiesCache {
             try {
                 configProp.load(in);
             } catch (IOException e) {
+                // file is optional/missing from classpath; skip and continue loading the rest
             }
         }
     }

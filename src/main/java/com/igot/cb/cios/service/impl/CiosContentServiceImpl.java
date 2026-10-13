@@ -44,7 +44,6 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import org.springframework.util.CollectionUtils;
 
 
@@ -101,7 +100,7 @@ public class CiosContentServiceImpl implements CiosContentService {
                 response = objectMapper.readValue(cachedJson, new TypeReference<Object>() {
                 });
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
             Optional<CiosContentEntity> optionalJsonNodeEntity = ciosRepository.findByContentId(contentId);
@@ -166,7 +165,7 @@ public class CiosContentServiceImpl implements CiosContentService {
                 response = objectMapper.readValue(cachedJson, new TypeReference<Object>() {
                 });
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
             Optional<CiosContentEntity> optionalJsonNodeEntity = ciosRepository.findByExternalIdAndPartnerId(externalid,partnerid);
@@ -356,7 +355,7 @@ public class CiosContentServiceImpl implements CiosContentService {
         }
         lowercaseTags.addAll(tags.stream()
                 .map(String::toLowerCase)
-                .collect(Collectors.toList()));
+                .toList());
         ArrayNode searchTagsArray = objectMapper.valueToTree(lowercaseTags);
         return searchTagsArray;
     }

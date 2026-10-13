@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import java.util.stream.Collectors;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
@@ -87,10 +86,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             List<String> hosts = Arrays.asList(cassandraHost.split(","));
             List<InetSocketAddress> contactPoints = hosts.stream()
                     .map(host -> new InetSocketAddress(host.trim(), cassandraPort))
-                    .collect(Collectors.toList());
+                    .toList();
             List<String> contactPointsString = hosts.stream()
                     .map(host -> host.trim() + ":" + cassandraPort)
-                    .collect(Collectors.toList());
+                    .toList();
             ConsistencyLevel consistencyLevel = getConsistencyLevel();
             String consistencyLevelName = consistencyLevel != null ? consistencyLevel.name() : ConsistencyLevel.LOCAL_ONE.name(); // or default fallback
             DriverConfigLoader loader = DriverConfigLoader.programmaticBuilder()
@@ -124,7 +123,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                         .withConfigLoader(loader)
                         .build();
             }
-            logger.info("Connected to the keyspaces: " + keySpaceName);
+            logger.info("Connected to the keyspaces: {}", keySpaceName);
             // Get metadata and log cluster information
             final Metadata metadata = sessionWithKeyspaces.getMetadata();
             logger.info(String.format("Connected to cluster: %s", metadata.getClusterName()));
@@ -134,7 +133,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             }
             return sessionWithKeyspaces;
         } catch (Exception e) {
-            logger.error("Error while creating Cassandra connection", e);
             throw new CustomException(
                     Constants.ERROR,
                     e.getMessage(),
@@ -146,7 +144,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         try {
             session = createCassandraConnectionWithKeySpaces(null);
         } catch (Exception e) {
-            logger.error("Error while creating Cassandra connection", e);
             throw new CustomException(
                     Constants.ERROR,
                     e.getMessage(),
@@ -161,14 +158,14 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
      */
     private static ConsistencyLevel getConsistencyLevel() {
         String consistency = PropertiesCache.getInstance().readProperty(Constants.SUNBIRD_CASSANDRA_CONSISTENCY_LEVEL);
-        logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: level = " + consistency);
+        logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: level = {}", consistency);
         if (StringUtils.isBlank(consistency)) return null;
 
         try {
             return DefaultConsistencyLevel.valueOf(consistency.toUpperCase());
         } catch (IllegalArgumentException exception) {
-            logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: Exception occurred with error message = "
-                    + exception.getMessage());
+            logger.info("CassandraConnectionManagerImpl:getConsistencyLevel: Exception occurred with error message = {}",
+                    exception.getMessage());
         }
         return null;
     }

@@ -177,11 +177,10 @@ class DesignationServiceImplTest {
     @Test
     void test_createErrorResponse_1() {
         CustomResponse response = new CustomResponse();
-        String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         String status = "FAILED";
 
-        designationService.createErrorResponse(response, errorMessage, httpStatus, status);
+        designationService.createErrorResponse(response, httpStatus, status);
 
         assertNotNull(response.getParams());
         assertEquals(status, response.getParams().getStatus());

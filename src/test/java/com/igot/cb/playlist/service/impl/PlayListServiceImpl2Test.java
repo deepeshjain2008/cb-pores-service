@@ -97,7 +97,6 @@ class PlayListServiceImpl2Test {
         injectField("redisCacheMngr", redisCacheMngr);
         injectField("cbServerProperties", cbServerProperties);
         injectField("outboundRequestHandlerService", outboundRequestHandlerService);
-        injectField("redisInsightIndex", 1);
         injectField("payloadValidation", payloadValidation);
     }
 
@@ -165,10 +164,10 @@ class PlayListServiceImpl2Test {
 
         var method = PlayListServiceImpl.class.getDeclaredMethod("persistInRedis", ObjectNode.class, PlayListEntity.class, String.class);
         method.setAccessible(true);
-        doNothing().when(redisCacheMngr).hset(any(), anyInt(), any());
+        doNothing().when(redisCacheMngr).hset(any(), any());
 
         method.invoke(playListService, enriched, entity, "org1playlist");
-        verify(redisCacheMngr, times(1)).hset(any(), anyInt(), any());
+        verify(redisCacheMngr, times(1)).hset(any(), any());
     }
 
     @Test

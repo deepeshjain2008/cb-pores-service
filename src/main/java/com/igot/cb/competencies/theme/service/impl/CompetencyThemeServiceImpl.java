@@ -113,18 +113,15 @@ public class CompetencyThemeServiceImpl implements CompetencyThemeService {
       });
       jsonNode.forEach(
           eachCompTheme -> {
-            if (!eachCompTheme.isNull() &&eachCompTheme.has(Constants.COMPETENCY_THEME_TYPE)){
-              if (!eachCompTheme.get(
-                  Constants.COMPETENCY_THEME_TYPE).asText().isEmpty()){
-                if (!titles.containsKey(eachCompTheme.get(Constants.COMPETENCY_THEME_TYPE).asText().toLowerCase())) {
-                  String formattedId = String.format("COMTHEME-%06d", startingId.incrementAndGet());
-                  JsonNode dataNode = validateAndSetData(eachCompTheme, userId, formattedId);
-                  CompetencyThemeEntity competencyThemeEntity = createCompetencyTheme(dataNode, formattedId);
-                  competencyThemeEntityList.add(competencyThemeEntity);
-                  compThemeDataNodeList.add(dataNode);
-                  titles.put(dataNode.get(Constants.TITLE).asText().toLowerCase(), true);
-                }
-              }
+            if (!eachCompTheme.isNull() && eachCompTheme.has(Constants.COMPETENCY_THEME_TYPE)
+                && !eachCompTheme.get(Constants.COMPETENCY_THEME_TYPE).asText().isEmpty()
+                && !titles.containsKey(eachCompTheme.get(Constants.COMPETENCY_THEME_TYPE).asText().toLowerCase())) {
+              String formattedId = String.format("COMTHEME-%06d", startingId.incrementAndGet());
+              JsonNode dataNode = validateAndSetData(eachCompTheme, userId, formattedId);
+              CompetencyThemeEntity competencyThemeEntity = createCompetencyTheme(dataNode, formattedId);
+              competencyThemeEntityList.add(competencyThemeEntity);
+              compThemeDataNodeList.add(dataNode);
+              titles.put(dataNode.get(Constants.TITLE).asText().toLowerCase(), true);
             }
 
           });
@@ -209,8 +206,7 @@ public class CompetencyThemeServiceImpl implements CompetencyThemeService {
     }
     String searchString = searchCriteria.getSearchString();
     if (searchString != null && searchString.length() < 2) {
-      createErrorResponse(response, "Minimum 3 characters are required to search",
-          HttpStatus.BAD_REQUEST,
+      createErrorResponse(response, HttpStatus.BAD_REQUEST,
           Constants.FAILED_CONST);
       return response;
     }
@@ -221,7 +217,7 @@ public class CompetencyThemeServiceImpl implements CompetencyThemeService {
       createSuccessResponse(response);
       return response;
     } catch (Exception e) {
-      createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+      createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR,
           Constants.FAILED_CONST);
       redisTemplate.opsForValue()
           .set(generateRedisJwtTokenKey(searchCriteria), searchResult, searchResultRedisTtl,
@@ -379,7 +375,7 @@ public class CompetencyThemeServiceImpl implements CompetencyThemeService {
       }
     }catch (Exception e){
       log.error("Error while processing file: {}", e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -587,7 +583,7 @@ public class CompetencyThemeServiceImpl implements CompetencyThemeService {
   }
 
   public void createErrorResponse(
-      CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+      CustomResponse response, HttpStatus httpStatus, String status) {
     response.setParams(new RespParam());
     response.getParams().setStatus(status);
     response.setResponseCode(httpStatus);

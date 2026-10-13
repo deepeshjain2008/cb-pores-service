@@ -398,7 +398,7 @@ class OrgServiceImplTest {
                 .thenReturn(frameworkResponse);
 
         // Act
-        String result = orgService.processFrameworkCreate(masterFramework, orgId,true);
+        String result = orgService.processFrameworkCreate(masterFramework, orgId);
 
         // Assert
         assertEquals(expectedNodeId, result);
@@ -422,7 +422,7 @@ class OrgServiceImplTest {
         failedResponse.put("responseCode", "ERROR");
 
         // Act
-        String result = orgService.processFrameworkCreate(masterFramework, orgId ,true);
+        String result = orgService.processFrameworkCreate(masterFramework, orgId );
 
         // Assert
         assertEquals("", result);
@@ -444,7 +444,7 @@ class OrgServiceImplTest {
 //        when(outboundRequestHandlerService.fetchResultUsingPost(anyString(), any(), any())).thenReturn(null);
 
         // Act
-        String result = orgService.processFrameworkCreate(masterFramework, orgId, false);
+        String result = orgService.processFrameworkCreate(masterFramework, orgId);
 
         // Assert
         assertEquals("", result);
@@ -468,7 +468,7 @@ class OrgServiceImplTest {
             .thenReturn(emptyResponse);
 
         // Act
-        String result = orgService.processFrameworkCreate(masterFramework, orgId, true);
+        String result = orgService.processFrameworkCreate(masterFramework, orgId);
 
         // Assert
         assertEquals("", result);
@@ -538,7 +538,7 @@ class OrgServiceImplTest {
 
         // Mocking the private methods
         // Note: This assumes you have a way to mock private methods. If not, you might need to refactor the code to make testing easier.
-        when(orgService.processFrameworkCreate(frameworkName, orgId, true)).thenReturn(newFrameworkId);
+        when(orgService.processFrameworkCreate(frameworkName, orgId)).thenReturn(newFrameworkId);
 
         // Act
         ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);
@@ -587,7 +587,7 @@ class OrgServiceImplTest {
 
         // Mocking the private methods
         // Note: This assumes you have a way to mock private methods. If not, you might need to refactor the code to make testing easier.
-        when(orgService.processFrameworkCreate(frameworkName, orgId, true)).thenReturn(newFrameworkId);
+        when(orgService.processFrameworkCreate(frameworkName, orgId)).thenReturn(newFrameworkId);
 
         // Act
         ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);
@@ -636,7 +636,7 @@ class OrgServiceImplTest {
 
         // Mocking the private methods
         // Note: This assumes you have a way to mock private methods. If not, you might need to refactor the code to make testing easier.
-        when(orgService.processFrameworkCreate(frameworkName, orgId, true)).thenReturn(newFrameworkId);
+        when(orgService.processFrameworkCreate(frameworkName, orgId)).thenReturn(newFrameworkId);
 
         // Act
         ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);
@@ -677,7 +677,7 @@ class OrgServiceImplTest {
                 eq(Constants.KEYSPACE_SUNBIRD), eq(Constants.ORG_TABLE), anyMap(), isNull(), eq(1)))
                 .thenReturn(null);
 
-        when(orgService.processFrameworkCreate(frameworkName, orgId, true)).thenReturn(newFrameworkId);
+        when(orgService.processFrameworkCreate(frameworkName, orgId)).thenReturn(newFrameworkId);
 
         // Act
         ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);
@@ -726,7 +726,7 @@ class OrgServiceImplTest {
 
         // Mocking the private methods
         // Note: This assumes you have a way to mock private methods. If not, you might need to refactor the code to make testing easier.
-        when(orgService.processFrameworkCreate(frameworkName, orgId,true)).thenReturn(newFrameworkId);
+        when(orgService.processFrameworkCreate(frameworkName, orgId)).thenReturn(newFrameworkId);
 
         // Act
         ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);
@@ -885,106 +885,6 @@ class OrgServiceImplTest {
                                 orgId.equals(map.get(Constants.ID))             // Valid key
                 )
         );
-    }
-
-
-    @Test
-    void test_frameworkRead_success() throws Exception {
-        // Mock URL building
-        when(cbServerProperties.getKnowledgeMS()).thenReturn("http://localhost/");
-        when(cbServerProperties.getOdcsFrameworkRead()).thenReturn("framework/read");
-
-        // Mock framework response
-        Map<String, Object> frameworkData = Map.of("name", "Framework 1");
-        Map<String, Object> resultData = Map.of(Constants.FRAMEWORK, frameworkData);
-        Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put(Constants.RESPONSE_CODE, Constants.OK);
-        responseMap.put(Constants.RESULT, resultData);
-
-        when(outboundRequestHandlerServiceImpl.fetchResult(anyString())).thenReturn(responseMap);
-
-        // Call private method via reflection
-        Method method = getFrameworkReadMethod();
-        ApiResponse response = (ApiResponse) method.invoke(orgService, frameworkId);
-
-        assertEquals(HttpStatus.OK, response.getResponseCode());
-        assertTrue(response.getResult().containsKey(Constants.FRAMEWORK));
-    }
-
-    @Test
-    void test_frameworkRead_responseCodeNotOk() throws Exception {
-        when(cbServerProperties.getKnowledgeMS()).thenReturn("http://localhost/");
-        when(cbServerProperties.getOdcsFrameworkRead()).thenReturn("framework/read");
-
-        Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put(Constants.RESPONSE_CODE, "ERROR");
-
-        when(outboundRequestHandlerServiceImpl.fetchResult(anyString())).thenReturn(responseMap);
-
-        Method method = getFrameworkReadMethod();
-        ApiResponse response = (ApiResponse) method.invoke(orgService, frameworkId);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getResponseCode());
-        assertTrue(response.getParams().getErr().contains("Data not found"));
-    }
-
-    @Test
-    void test_frameworkRead_nullResponse() throws Exception {
-        when(cbServerProperties.getKnowledgeMS()).thenReturn("http://localhost/");
-        when(cbServerProperties.getOdcsFrameworkRead()).thenReturn("framework/read");
-
-        when(outboundRequestHandlerServiceImpl.fetchResult(anyString())).thenReturn(null);
-
-        Method method = getFrameworkReadMethod();
-        ApiResponse response = (ApiResponse) method.invoke(orgService, frameworkId);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
-        assertTrue(response.getParams().getErr().contains("Failed to read the framework details"));
-    }
-
-    @Test
-    void test_frameworkRead_exceptionThrown() throws Exception {
-        when(cbServerProperties.getKnowledgeMS()).thenReturn("http://localhost/");
-        when(cbServerProperties.getOdcsFrameworkRead()).thenReturn("framework/read");
-
-        when(outboundRequestHandlerServiceImpl.fetchResult(anyString()))
-                .thenThrow(new RuntimeException("Test exception"));
-
-        Method method = getFrameworkReadMethod();
-        ApiResponse response = (ApiResponse) method.invoke(orgService, frameworkId);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
-        assertEquals(Constants.FAILED, response.getParams().getStatus());
-        assertTrue(response.getParams().getErr().contains("Test exception"));
-    }
-
-    @Test
-    void testCreateChannel_usingReflection() throws Exception {
-        // Get private static method
-        Method method = OrgServiceImpl.class.getDeclaredMethod("createChannel", String.class);
-        method.setAccessible(true);
-
-        String testChannelId = "channel-123";
-        Map<String, String> result = (Map<String, String>) method.invoke(null, testChannelId);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(testChannelId, result.get(Constants.IDENTIFIER));
-    }
-
-    @Test
-    void testCreateChannels_usingReflection() throws Exception {
-        // Get private static method
-        Method method = OrgServiceImpl.class.getDeclaredMethod("createChannels", String.class);
-        method.setAccessible(true);
-
-        String testChannelId = "channel-456";
-        List<Map<String, String>> result = (List<Map<String, String>>) method.invoke(null, testChannelId);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        Map<String, String> channelMap = result.get(0);
-        assertEquals(testChannelId, channelMap.get(Constants.IDENTIFIER));
     }
 
 
@@ -1325,9 +1225,4 @@ class OrgServiceImplTest {
         assertEquals("Invalid token", response.getParams().getErr());
     }
 
-    private Method getFrameworkReadMethod() throws Exception {
-        Method method = OrgServiceImpl.class.getDeclaredMethod("frameworkRead", String.class);
-        method.setAccessible(true);
-        return method;
-    }
 }

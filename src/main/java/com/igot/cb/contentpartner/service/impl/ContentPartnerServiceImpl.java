@@ -258,10 +258,8 @@ public class ContentPartnerServiceImpl implements ContentPartnerService {
         // Add contentPartnerName to searchTags
         if (formattedData.has("contentPartnerName")) {
             String partnerName = formattedData.get("contentPartnerName").textValue();
-            if (StringUtils.isNotBlank(partnerName)) {
-                if (!searchTags.contains(partnerName.toLowerCase())) {
-                    searchTags.add(partnerName.toLowerCase());
-                }
+            if (StringUtils.isNotBlank(partnerName) && !searchTags.contains(partnerName.toLowerCase())) {
+                searchTags.add(partnerName.toLowerCase());
             }
         }
 
@@ -285,7 +283,7 @@ public class ContentPartnerServiceImpl implements ContentPartnerService {
             if (StringUtils.isNotEmpty(cachedJson)) {
                 log.info("Record coming from redis cache");
                 response.setResponseCode(HttpStatus.OK);
-                response.setResult(objectMapper.readValue(cachedJson, new TypeReference<Map>() {
+                response.setResult(objectMapper.readValue(cachedJson, new TypeReference<Map<String, Object>>() {
                 }));
             } else {
                 Optional<ContentPartnerEntity> entityOptional = entityRepository.findById(id);
@@ -404,7 +402,7 @@ public class ContentPartnerServiceImpl implements ContentPartnerService {
             if (StringUtils.isNotEmpty(cachedJson)) {
                 log.info("Record coming from redis cache");
                 response.setResponseCode(HttpStatus.OK);
-                response.setResult(objectMapper.readValue(cachedJson, new TypeReference<Map>() {}));
+                response.setResult(objectMapper.readValue(cachedJson, new TypeReference<Map<String, Object>>() {}));
             } else {
                 Optional<ContentPartnerEntity> entityOptional = entityRepository.findByPartnerCode(partnercode);
                 if (entityOptional.isPresent()) {

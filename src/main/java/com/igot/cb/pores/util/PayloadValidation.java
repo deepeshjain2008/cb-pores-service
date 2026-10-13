@@ -21,7 +21,6 @@ public class PayloadValidation {
   private Logger logger = LoggerFactory.getLogger(DemandServiceImpl.class);
 
   public void validatePayload(String fileName, JsonNode payload) {
-//    log.info("PayloadValidation::validatePayload:inside");
     try {
       JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
       InputStream schemaStream = schemaFactory.getClass().getResourceAsStream(fileName);
@@ -34,7 +33,6 @@ public class PayloadValidation {
         validateObject(schema, payload);
       }
     } catch (Exception e) {
-      logger.error("Failed to validate payload", e);
       throw new CustomException("Failed to validate payload", e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
@@ -46,7 +44,7 @@ public class PayloadValidation {
       for (ValidationMessage message : validationMessages) {
         errorMessage.append(message.getMessage()).append("\n");
       }
-      logger.error("Validation Error", errorMessage.toString());
+      logger.error("Validation Error: {}", errorMessage.toString());
       throw new CustomException("Validation Error", errorMessage.toString(), HttpStatus.BAD_REQUEST);
     }
   }

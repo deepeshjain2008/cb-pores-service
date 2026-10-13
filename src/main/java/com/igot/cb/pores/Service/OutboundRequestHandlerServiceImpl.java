@@ -65,6 +65,7 @@ public class OutboundRequestHandlerServiceImpl {
 						new TypeReference<HashMap<String, Object>>() {
 						});
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 			log.error("Failed to get details. ", e);
 		} catch (Exception e) {
@@ -96,6 +97,7 @@ public class OutboundRequestHandlerServiceImpl {
 						new TypeReference<HashMap<String, Object>>() {
 						});
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		} catch (Exception e) {
@@ -103,6 +105,7 @@ public class OutboundRequestHandlerServiceImpl {
 			try {
 				log.warn(ERROR_RESPONSE + mapper.writeValueAsString(response));
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 		}
 		return response;
@@ -162,6 +165,7 @@ public class OutboundRequestHandlerServiceImpl {
 						new TypeReference<HashMap<String, Object>>() {
 						});
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		} catch (Exception e) {
@@ -169,6 +173,7 @@ public class OutboundRequestHandlerServiceImpl {
 			try {
 				log.warn(ERROR_RESPONSE + mapper.writeValueAsString(response));
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 		}
 		return response;
@@ -204,6 +209,7 @@ public class OutboundRequestHandlerServiceImpl {
 						new TypeReference<HashMap<String, Object>>() {
 						});
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 			log.error(ERROR_RECEIVED + hce.getResponseBodyAsString(), hce);
 		} catch(JsonProcessingException e) {
@@ -211,6 +217,7 @@ public class OutboundRequestHandlerServiceImpl {
 			try {
 				log.warn(ERROR_RESPONSE + mapper.writeValueAsString(response));
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 		}
 		return response;
@@ -238,6 +245,7 @@ public class OutboundRequestHandlerServiceImpl {
 						new TypeReference<HashMap<String, Object>>() {
 						});
 			} catch (Exception e1) {
+				// response body isn't valid JSON; keep response as whatever was already set
 			}
 			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		}

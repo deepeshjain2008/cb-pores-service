@@ -248,7 +248,9 @@ public class Base64Util {
         encoder.output = new byte[output_len];
         encoder.process(input, offset, len, true);
 
-        assert encoder.op == output_len;
+        if (encoder.op != output_len) {
+            throw new IllegalStateException("Base64 encode produced an unexpected output length");
+        }
 
         return encoder.output;
     }
@@ -374,14 +376,14 @@ public class Base64Util {
 
             // Using local variables makes the decoder about 12%
             // faster than if we manipulate the member variables in
-            // the loop.  (Even alphabet makes a measurable
+            // the loop.  (Even localAlphabet makes a measurable
             // difference, which is somewhat surprising to me since
             // the member variable is final.)
-            int state = this.state;
-            int value = this.value;
+            int localState = this.state;
+            int localValue = this.value;
             int op = 0;
             final byte[] output = this.output;
-            final int[] alphabet = this.alphabet;
+            final int[] localAlphabet = this.alphabet;
 
             while (p < len) {
                 // Try the fast path:  we're starting a new tuple and the
@@ -391,22 +393,22 @@ public class Base64Util {
                 // the data.
                 //
                 // If any of the next four bytes of input are non-data
-                // (whitespace, etc.), value will end up negative.  (All
+                // (whitespace, etc.), localValue will end up negative.  (All
                 // the non-data values in decode are small negative
                 // numbers, so shifting any of them up and or'ing them
-                // together will result in a value with its top bit set.)
+                // together will result in a localValue with its top bit set.)
                 //
                 // You can remove this whole block and the output should
                 // be the same, just slower.
-                if (state == 0) {
+                if (localState == 0) {
                     while (p + 4 <= len &&
-                            (value = ((alphabet[input[p] & 0xff] << 18) |
-                                    (alphabet[input[p + 1] & 0xff] << 12) |
-                                    (alphabet[input[p + 2] & 0xff] << 6) |
-                                    (alphabet[input[p + 3] & 0xff]))) >= 0) {
-                        output[op + 2] = (byte) value;
-                        output[op + 1] = (byte) (value >> 8);
-                        output[op] = (byte) (value >> 16);
+                            (localValue = ((localAlphabet[input[p] & 0xff] << 18) |
+                                    (localAlphabet[input[p + 1] & 0xff] << 12) |
+                                    (localAlphabet[input[p + 2] & 0xff] << 6) |
+                                    (localAlphabet[input[p + 3] & 0xff]))) >= 0) {
+                        output[op + 2] = (byte) localValue;
+                        output[op + 1] = (byte) (localValue >> 8);
+                        output[op] = (byte) (localValue >> 16);
                         op += 3;
                         p += 4;
                     }
@@ -415,16 +417,16 @@ public class Base64Util {
 
                 // The fast path isn't available -- either we've read a
                 // partial tuple, or the next four input bytes aren't all
-                // data, or whatever.  Fall back to the slower state
+                // data, or whatever.  Fall back to the slower localState
                 // machine implementation.
 
-                int d = alphabet[input[p++] & 0xff];
+                int d = localAlphabet[input[p++] & 0xff];
 
-                switch (state) {
+                switch (localState) {
                     case 0:
                         if (d >= 0) {
-                            value = d;
-                            ++state;
+                            localValue = d;
+                            ++localState;
                         } else if (d != SKIP) {
                             this.state = 6;
                             return false;
@@ -433,8 +435,8 @@ public class Base64Util {
 
                     case 1:
                         if (d >= 0) {
-                            value = (value << 6) | d;
-                            ++state;
+                            localValue = (localValue << 6) | d;
+                            ++localState;
                         } else if (d != SKIP) {
                             this.state = 6;
                             return false;
@@ -443,13 +445,13 @@ public class Base64Util {
 
                     case 2:
                         if (d >= 0) {
-                            value = (value << 6) | d;
-                            ++state;
+                            localValue = (localValue << 6) | d;
+                            ++localState;
                         } else if (d == EQUALS) {
                             // Emit the last (partial) output tuple;
                             // expect exactly one more padding character.
-                            output[op++] = (byte) (value >> 4);
-                            state = 4;
+                            output[op++] = (byte) (localValue >> 4);
+                            localState = 4;
                         } else if (d != SKIP) {
                             this.state = 6;
                             return false;
@@ -458,20 +460,20 @@ public class Base64Util {
 
                     case 3:
                         if (d >= 0) {
-                            // Emit the output triple and return to state 0.
-                            value = (value << 6) | d;
-                            output[op + 2] = (byte) value;
-                            output[op + 1] = (byte) (value >> 8);
-                            output[op] = (byte) (value >> 16);
+                            // Emit the output triple and return to localState 0.
+                            localValue = (localValue << 6) | d;
+                            output[op + 2] = (byte) localValue;
+                            output[op + 1] = (byte) (localValue >> 8);
+                            output[op] = (byte) (localValue >> 16);
                             op += 3;
-                            state = 0;
+                            localState = 0;
                         } else if (d == EQUALS) {
                             // Emit the last (partial) output tuple;
                             // expect no further data or padding characters.
-                            output[op + 1] = (byte) (value >> 2);
-                            output[op] = (byte) (value >> 10);
+                            output[op + 1] = (byte) (localValue >> 2);
+                            output[op] = (byte) (localValue >> 10);
                             op += 2;
-                            state = 5;
+                            localState = 5;
                         } else if (d != SKIP) {
                             this.state = 6;
                             return false;
@@ -480,7 +482,7 @@ public class Base64Util {
 
                     case 4:
                         if (d == EQUALS) {
-                            ++state;
+                            ++localState;
                         } else if (d != SKIP) {
                             this.state = 6;
                             return false;
@@ -502,35 +504,33 @@ public class Base64Util {
             if (!finish) {
                 // We're out of input, but a future call could provide
                 // more.
-                this.state = state;
-                this.value = value;
+                this.state = localState;
+                this.value = localValue;
                 this.op = op;
                 return true;
             }
 
             // Done reading input.  Now figure out where we are left in
-            // the state machine and finish up.
+            // the localState machine and finish up.
 
-            switch (state) {
+            switch (localState) {
                 case 0:
                     // Output length is a multiple of three.  Fine.
                     break;
-                case 1:
-                    // Read one extra input byte, which isn't enough to
-                    // make another output byte.  Illegal.
-                    this.state = 6;
-                    return false;
                 case 2:
                     // Read two extra input bytes, enough to emit 1 more
                     // output byte.  Fine.
-                    output[op++] = (byte) (value >> 4);
+                    output[op++] = (byte) (localValue >> 4);
                     break;
                 case 3:
                     // Read three extra input bytes, enough to emit 2 more
                     // output bytes.  Fine.
-                    output[op++] = (byte) (value >> 10);
-                    output[op++] = (byte) (value >> 2);
+                    output[op++] = (byte) (localValue >> 10);
+                    output[op++] = (byte) (localValue >> 2);
                     break;
+                case 1:
+                    // Read one extra input byte, which isn't enough to
+                    // make another output byte.  Illegal.
                 case 4:
                     // Read one padding '=' when we expected 2.  Illegal.
                     this.state = 6;
@@ -543,7 +543,7 @@ public class Base64Util {
                     break;
             }
 
-            this.state = state;
+            this.state = localState;
             this.op = op;
             return true;
         }
@@ -610,10 +610,10 @@ public class Base64Util {
 
         public boolean process(byte[] input, int offset, int len, boolean finish) {
             // Using local variables makes the encoder about 9% faster.
-            final byte[] alphabet = this.alphabet;
+            final byte[] localAlphabet = this.alphabet;
             final byte[] output = this.output;
             int op = 0;
-            int count = this.count;
+            int localCount = this.count;
 
             int p = offset;
             len += offset;
@@ -655,14 +655,14 @@ public class Base64Util {
             }
 
             if (v != -1) {
-                output[op++] = alphabet[(v >> 18) & 0x3f];
-                output[op++] = alphabet[(v >> 12) & 0x3f];
-                output[op++] = alphabet[(v >> 6) & 0x3f];
-                output[op++] = alphabet[v & 0x3f];
-                if (--count == 0) {
+                output[op++] = localAlphabet[(v >> 18) & 0x3f];
+                output[op++] = localAlphabet[(v >> 12) & 0x3f];
+                output[op++] = localAlphabet[(v >> 6) & 0x3f];
+                output[op++] = localAlphabet[v & 0x3f];
+                if (--localCount == 0) {
                     if (do_cr) output[op++] = '\r';
                     output[op++] = '\n';
-                    count = LINE_GROUPS;
+                    localCount = LINE_GROUPS;
                 }
             }
 
@@ -675,16 +675,16 @@ public class Base64Util {
                 v = ((input[p] & 0xff) << 16) |
                         ((input[p + 1] & 0xff) << 8) |
                         (input[p + 2] & 0xff);
-                output[op] = alphabet[(v >> 18) & 0x3f];
-                output[op + 1] = alphabet[(v >> 12) & 0x3f];
-                output[op + 2] = alphabet[(v >> 6) & 0x3f];
-                output[op + 3] = alphabet[v & 0x3f];
+                output[op] = localAlphabet[(v >> 18) & 0x3f];
+                output[op + 1] = localAlphabet[(v >> 12) & 0x3f];
+                output[op + 2] = localAlphabet[(v >> 6) & 0x3f];
+                output[op + 3] = localAlphabet[v & 0x3f];
                 p += 3;
                 op += 4;
-                if (--count == 0) {
+                if (--localCount == 0) {
                     if (do_cr) output[op++] = '\r';
                     output[op++] = '\n';
-                    count = LINE_GROUPS;
+                    localCount = LINE_GROUPS;
                 }
             }
 
@@ -698,8 +698,8 @@ public class Base64Util {
                     int t = 0;
                     v = ((tailLen > 0 ? tail[t++] : input[p++]) & 0xff) << 4;
                     tailLen -= t;
-                    output[op++] = alphabet[(v >> 6) & 0x3f];
-                    output[op++] = alphabet[v & 0x3f];
+                    output[op++] = localAlphabet[(v >> 6) & 0x3f];
+                    output[op++] = localAlphabet[v & 0x3f];
                     if (do_padding) {
                         output[op++] = '=';
                         output[op++] = '=';
@@ -713,9 +713,9 @@ public class Base64Util {
                     v = (((tailLen > 1 ? tail[t++] : input[p++]) & 0xff) << 10) |
                             (((tailLen > 0 ? tail[t++] : input[p++]) & 0xff) << 2);
                     tailLen -= t;
-                    output[op++] = alphabet[(v >> 12) & 0x3f];
-                    output[op++] = alphabet[(v >> 6) & 0x3f];
-                    output[op++] = alphabet[v & 0x3f];
+                    output[op++] = localAlphabet[(v >> 12) & 0x3f];
+                    output[op++] = localAlphabet[(v >> 6) & 0x3f];
+                    output[op++] = localAlphabet[v & 0x3f];
                     if (do_padding) {
                         output[op++] = '=';
                     }
@@ -723,13 +723,14 @@ public class Base64Util {
                         if (do_cr) output[op++] = '\r';
                         output[op++] = '\n';
                     }
-                } else if (do_newline && op > 0 && count != LINE_GROUPS) {
+                } else if (do_newline && op > 0 && localCount != LINE_GROUPS) {
                     if (do_cr) output[op++] = '\r';
                     output[op++] = '\n';
                 }
 
-                assert tailLen == 0;
-                assert p == len;
+                if (tailLen != 0 || p != len) {
+                    throw new IllegalStateException("Base64 encode left unexpected state after processing");
+                }
             } else {
                 // Save the leftovers in tail to be consumed on the next
                 // call to encodeInternal.
@@ -743,7 +744,7 @@ public class Base64Util {
             }
 
             this.op = op;
-            this.count = count;
+            this.count = localCount;
 
             return true;
         }

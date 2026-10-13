@@ -22,7 +22,6 @@ import co.elastic.clients.json.JsonData;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.igot.cb.pores.elasticsearch.config.EsConfig;
 import com.igot.cb.pores.elasticsearch.dto.FacetDTO;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.elasticsearch.dto.SearchResult;
@@ -46,9 +45,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class EsUtilServiceImpl implements EsUtilService {
 
-    /*@Autowired
-    private RestHighLevelClient elasticsearchClient;*/
-    private final EsConfig esConfig;
     private final ElasticsearchClient elasticsearchClient;
 
     private final ObjectMapper objectMapper;
@@ -56,10 +52,9 @@ public class EsUtilServiceImpl implements EsUtilService {
     private final CbServerProperties cbServerProperties;
 
     @Autowired
-    public EsUtilServiceImpl(ElasticsearchClient elasticsearchClient, EsConfig esConnection,
+    public EsUtilServiceImpl(ElasticsearchClient elasticsearchClient,
                               ObjectMapper objectMapper, CbServerProperties cbServerProperties) {
         this.elasticsearchClient = elasticsearchClient;
-        this.esConfig = esConnection;
         this.objectMapper = objectMapper;
         this.cbServerProperties = cbServerProperties;
     }
@@ -258,14 +253,14 @@ public class EsUtilServiceImpl implements EsUtilService {
                                 // Handle list of booleans
                                 List<FieldValue> boolTermsList = list.stream()
                                         .map(item -> FieldValue.of((Boolean) item))
-                                        .collect(Collectors.toList());
+                                        .toList();
                                 boolQueryBuilder.must(Query.of(q -> q.terms(t -> t.field(field)
                                         .terms(terms -> terms.value(boolTermsList)))));
                             } else {
                                 // Handle list of strings
                                 List<FieldValue> termsList = ((ArrayList<String>) value).stream()
                                         .map(FieldValue::of)
-                                        .collect(Collectors.toList());
+                                        .toList();
                                 boolQueryBuilder.must(Query.of(q -> q.terms(t -> t.field(field + Constants.KEYWORD)
                                         .terms(terms -> terms.value(termsList)))));
                             }

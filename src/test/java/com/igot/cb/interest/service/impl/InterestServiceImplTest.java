@@ -438,11 +438,10 @@ class InterestServiceImplTest {
     void test_createErrorResponse_setsErrorResponseParameters() {
        
         CustomResponse response = new CustomResponse();
-        String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         String status = "FAILED";
 
-        interestService.createErrorResponse(response, errorMessage, httpStatus, status);
+        interestService.createErrorResponse(response, httpStatus, status);
 
         assertEquals(status, response.getParams().getStatus());
         assertEquals(httpStatus, response.getResponseCode());

@@ -233,29 +233,10 @@ class AnnouncementServiceImplTest {
     @Test
     void test_createErrorResponse_setsAllFields() {
         CustomResponse response = new CustomResponse();
-        String errorMessage = "Test error message";
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         String status = "FAILED";
 
-        announcementService.createErrorResponse(response, errorMessage, httpStatus, status);
-
-        assertNotNull(response.getParams());
-        assertEquals(status, response.getParams().getStatus());
-        assertEquals(httpStatus, response.getResponseCode());
-    }
-
-    /**
-     * Test case for createErrorResponse method
-     * Verifies that the method correctly sets the error response parameters
-     */
-    @Test
-    void test_createErrorResponse_setsErrorResponseParameters() {
-        CustomResponse response = new CustomResponse();
-        String errorMessage = "Test error message";
-        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-        String status = "FAILED";
-
-        announcementService.createErrorResponse(response, errorMessage, httpStatus, status);
+        announcementService.createErrorResponse(response, httpStatus, status);
 
         assertNotNull(response.getParams());
         assertEquals(status, response.getParams().getStatus());

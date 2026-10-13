@@ -111,19 +111,15 @@ public class CompetencyAreaServiceImpl implements CompetencyAreaService {
       });
       jsonNode.forEach(
           eachCompArea -> {
-            if (!eachCompArea.isNull() && eachCompArea.has(Constants.COMPETENCY_AREA_TYPE)){
-             if (!eachCompArea.get(
-                 Constants.COMPETENCY_AREA_TYPE).asText().isEmpty()){
-               if (!titles.containsKey(eachCompArea.get(Constants.COMPETENCY_AREA_TYPE).asText().toLowerCase())) {
-                 String formattedId = String.format("COMAREA-%06d", startingId.incrementAndGet());
-                 JsonNode dataNode = validateAndSetData(eachCompArea, userId, formattedId);
-                 CompetencyAreaEntity competencyAreaEntity = createCompetencyArea(dataNode, formattedId);
-                 competencyAreaEntityList.add(competencyAreaEntity);
-                 competencydataNodeList.add(dataNode);
-                 titles.put(dataNode.get(Constants.TITLE).asText().toLowerCase(), true);
-               }
-
-             }
+            if (!eachCompArea.isNull() && eachCompArea.has(Constants.COMPETENCY_AREA_TYPE)
+                && !eachCompArea.get(Constants.COMPETENCY_AREA_TYPE).asText().isEmpty()
+                && !titles.containsKey(eachCompArea.get(Constants.COMPETENCY_AREA_TYPE).asText().toLowerCase())) {
+              String formattedId = String.format("COMAREA-%06d", startingId.incrementAndGet());
+              JsonNode dataNode = validateAndSetData(eachCompArea, userId, formattedId);
+              CompetencyAreaEntity competencyAreaEntity = createCompetencyArea(dataNode, formattedId);
+              competencyAreaEntityList.add(competencyAreaEntity);
+              competencydataNodeList.add(dataNode);
+              titles.put(dataNode.get(Constants.TITLE).asText().toLowerCase(), true);
             }
 
           });
@@ -352,7 +348,7 @@ public class CompetencyAreaServiceImpl implements CompetencyAreaService {
       }
     }catch (Exception e){
       log.error("Error while processing file: {}", e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -370,8 +366,7 @@ public class CompetencyAreaServiceImpl implements CompetencyAreaService {
     }
     String searchString = searchCriteria.getSearchString();
     if (searchString != null && searchString.length() < 2) {
-      createErrorResponse(response, "Minimum 3 characters are required to search",
-          HttpStatus.BAD_REQUEST,
+      createErrorResponse(response, HttpStatus.BAD_REQUEST,
           Constants.FAILED_CONST);
       return response;
     }
@@ -382,7 +377,7 @@ public class CompetencyAreaServiceImpl implements CompetencyAreaService {
       createSuccessResponse(response);
       return response;
     } catch (Exception e) {
-      createErrorResponse(response, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+      createErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR,
           Constants.FAILED_CONST);
       redisTemplate.opsForValue()
           .set(generateRedisJwtTokenKey(searchCriteria), searchResult, searchResultRedisTtl,
@@ -503,19 +498,10 @@ public class CompetencyAreaServiceImpl implements CompetencyAreaService {
   }
 
   public void createErrorResponse(
-      CustomResponse response, String errorMessage, HttpStatus httpStatus, String status) {
+      CustomResponse response, HttpStatus httpStatus, String status) {
     response.setParams(new RespParam());
     response.getParams().setStatus(status);
     response.setResponseCode(httpStatus);
-  }
-
-  private boolean existsInDataJson(JsonNode dateJson, String competencyAreaType) {
-    for (JsonNode node : dateJson) {
-      if (node.has("title") && node.get("title").asText().equals(competencyAreaType)) {
-        return true;
-      }
-    }
-    return false;
   }
 
 }

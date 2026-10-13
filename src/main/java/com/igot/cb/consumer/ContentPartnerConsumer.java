@@ -31,21 +31,21 @@ public class ContentPartnerConsumer {
 
     // ---------- DEACTIVATE ----------
     @KafkaListener(topics = "${kafka.topic.content.partner.delete}", groupId = "${kafka.topic.content.partner.delete.group}")
-    public void consumePartnerDeactivate(ConsumerRecord<String, String> record) {
-        log.info("Partner DEACTIVATE event received: {}", record.value());
-        handlePartnerEvent(record, false);
+    public void consumePartnerDeactivate(ConsumerRecord<String, String> consumerRecord) {
+        log.info("Partner DEACTIVATE event received: {}", consumerRecord.value());
+        handlePartnerEvent(consumerRecord, false);
     }
 
     // ---------- ACTIVATE ----------
     @KafkaListener(topics = "${kafka.topic.content.partner.activate}", groupId = "${kafka.topic.content.partner.activate.group}")
-    public void consumePartnerActivate(ConsumerRecord<String, String> record) {
-        log.info("Partner ACTIVATE event received: {}", record.value());
-        handlePartnerEvent(record, true);
+    public void consumePartnerActivate(ConsumerRecord<String, String> consumerRecord) {
+        log.info("Partner ACTIVATE event received: {}", consumerRecord.value());
+        handlePartnerEvent(consumerRecord, true);
     }
 
-    private void handlePartnerEvent(ConsumerRecord<String, String> record, boolean isActive) {
+    private void handlePartnerEvent(ConsumerRecord<String, String> consumerRecord, boolean isActive) {
         try {
-            Map<String, Object> event = objectMapper.readValue(record.value(), Map.class);
+            Map<String, Object> event = objectMapper.readValue(consumerRecord.value(), Map.class);
             String partnerId = (String) event.get(Constants.PARTNER_ID);
             if (partnerId == null || partnerId.isBlank()) {
                 log.warn("partnerId missing in event: {}", event);
@@ -74,11 +74,9 @@ public class ContentPartnerConsumer {
             SearchResult result = ciosContentService.searchCotent(criteria);
             if (result == null || result.getData() == null || !result.getData().isArray()) {
                 log.warn("Search failed or invalid response for partnerId={}", partnerId);
-                continueProcessing = false;
                 break;
             }
             if (result.getData().size() == 0) {
-                continueProcessing = false;
                 break;
             }
             if (page == 0) {
@@ -87,7 +85,6 @@ public class ContentPartnerConsumer {
             ciosContentService.updatePartnerIsActiveInEs(result.getData(), partnerId, isActive);
             processedCount += result.getData().size();
             if (processedCount >= totalCount) {
-                continueProcessing = false;
                 break;
             }
             page++;

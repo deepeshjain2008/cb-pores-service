@@ -19,7 +19,7 @@ public interface EsUtilService {
 
   void deleteDocumentsByCriteria(String esIndexName, Query query);
 
-  SearchResult searchDocuments(String esIndexName, SearchCriteria searchCriteria) throws Exception;
+  SearchResult searchDocuments(String esIndexName, SearchCriteria searchCriteria);
 
   boolean isIndexPresent(String indexName);
 
