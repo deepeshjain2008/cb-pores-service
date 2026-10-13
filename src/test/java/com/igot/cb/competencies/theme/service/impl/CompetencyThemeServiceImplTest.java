@@ -20,6 +20,7 @@ import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.FileProcessService;
 import com.igot.cb.pores.util.PayloadValidation;
+import com.igot.cb.pores.util.TermCreationHelper;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -103,6 +104,8 @@ class CompetencyThemeServiceImplTest {
     @BeforeEach
     void setup() {
         lenient().when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+        TermCreationHelper termCreationHelper = new TermCreationHelper(cbServerProperties, outboundRequestHandlerServiceImpl, objectMapper);
+        ReflectionTestUtils.setField(competencyThemeService, "termCreationHelper", termCreationHelper);
     }
 
     /**
@@ -113,7 +116,7 @@ class CompetencyThemeServiceImplTest {
      * returns: response
      */
 //    @Test
-//    void test_createCompTheme_1() throws Exception {
+//    void test_createCompTheme_1()  {
 //        // Arrange
 //        JsonNode competencyTheme = objectMapper.createObjectNode();
 //        String token = "test_token";
@@ -140,7 +143,7 @@ class CompetencyThemeServiceImplTest {
      * when the index exists, data is present, user is authorized, and the theme title is unique.
      */
 //    @Test
-//    void test_createCompTheme_2() throws Exception {
+//    void test_createCompTheme_2()  {
 //        MockitoAnnotations.openMocks(this);
 //
 //        // Mocking input
@@ -173,7 +176,7 @@ class CompetencyThemeServiceImplTest {
     * returns: response
     */
 //    @Test
-//    void test_createCompTheme_3() throws Exception {
+//    void test_createCompTheme_3()  {
 //        // Arrange
 //        JsonNode competencyTheme = new ObjectMapper().createObjectNode().put(Constants.TITLE, "New Theme");
 //        String token = "valid_token";
@@ -207,7 +210,7 @@ class CompetencyThemeServiceImplTest {
      * - !titles.containsKey(competencyTheme.get(Constants.TITLE).asText().toLowerCase()) is true
      */
 //    @Test
-//    void test_createCompTheme_4() throws Exception {
+//    void test_createCompTheme_4()  {
 //        // Arrange
 //        ObjectMapper objectMapper = new ObjectMapper();
 //        JsonNode competencyTheme = objectMapper.createObjectNode();
@@ -248,7 +251,7 @@ class CompetencyThemeServiceImplTest {
      * user is authorized, and the competency theme title already exists in the system.
      */
 //    @Test
-//    void test_createCompTheme_5() throws Exception {
+//    void test_createCompTheme_5()  {
 //        // Arrange
 //        JsonNode competencyTheme = new ObjectMapper().createObjectNode().put(Constants.TITLE, "Existing Theme");
 //        String token = "validToken";
@@ -671,7 +674,7 @@ class CompetencyThemeServiceImplTest {
      * when all conditions in the path constraints are met.
      */
     @Test
-    void test_loadCompetencyTheme_1() throws Exception {
+    void test_loadCompetencyTheme_1()  {
         // Arrange
         MultipartFile mockFile = mock(MultipartFile.class);
         String token = "validToken";
@@ -719,7 +722,7 @@ class CompetencyThemeServiceImplTest {
      * and a new competency theme is added.
      */
 //    @Test
-//    void test_loadCompetencyTheme_2() throws Exception {
+//    void test_loadCompetencyTheme_2()  {
 //        // Arrange
 //        MultipartFile file = mock(MultipartFile.class);
 //        String token = "validToken";
@@ -795,7 +798,7 @@ class CompetencyThemeServiceImplTest {
      * - !titles.containsKey(eachCompTheme.get(Constants.COMPETENCY_THEME_TYPE).asText().toLowerCase()) is true
      */
     @Test
-    void test_loadCompetencyTheme_4() throws Exception {
+    void test_loadCompetencyTheme_4()  {
         // Arrange
         MultipartFile file = mock(MultipartFile.class);
         String token = "valid_token";
@@ -835,7 +838,7 @@ class CompetencyThemeServiceImplTest {
      * but COMPETENCY_THEME_TYPE is empty.
      */
     @Test
-    void test_loadCompetencyTheme_6() throws Exception {
+    void test_loadCompetencyTheme_6()  {
         // Arrange
         MultipartFile file = new MockMultipartFile("file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", new byte[0]);
         String token = "testToken";
@@ -874,7 +877,7 @@ class CompetencyThemeServiceImplTest {
      * user ID is valid, and the competency theme data is invalid or missing required fields.
      */
 //    @Test
-//    void test_loadCompetencyTheme_7() throws Exception {
+//    void test_loadCompetencyTheme_7()  {
 //        // Arrange
 //        MultipartFile mockFile = Mockito.mock(MultipartFile.class);
 //        String token = "validToken";
@@ -906,7 +909,7 @@ class CompetencyThemeServiceImplTest {
      * contains non-empty data, but the user token is invalid, resulting in no further processing.
      */
     @Test
-    void test_loadCompetencyTheme_8() throws Exception {
+    void test_loadCompetencyTheme_8()  {
         // Arrange
         MultipartFile mockFile = mock(MultipartFile.class);
         String invalidToken = "invalid_token";
@@ -947,7 +950,7 @@ class CompetencyThemeServiceImplTest {
      * - titles.containsKey(eachCompTheme.get(Constants.COMPETENCY_THEME_TYPE).asText().toLowerCase()) is true
      */
     @Test
-    void test_loadCompetencyTheme_existingTheme() throws Exception {
+    void test_loadCompetencyTheme_existingTheme()  {
         // Arrange
         MultipartFile file = mock(MultipartFile.class);
         String token = "validToken";
@@ -1271,7 +1274,7 @@ class CompetencyThemeServiceImplTest {
      * when the Redis cache does not contain the search result and the search string is valid.
      */
     @Test
-    void test_searchCompTheme_3() throws Exception {
+    void test_searchCompTheme_3()  {
 
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();

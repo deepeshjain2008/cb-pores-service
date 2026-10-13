@@ -305,7 +305,7 @@ class ContentPartnerRegistrationServiceImplTest {
 
     // READ TEST CASES
     @Test
-    void testRead_Success_ByEmailAndApplicationId() throws Exception {
+    void testRead_Success_ByEmailAndApplicationId()  {
         String email = "a@b.com";
         String applicationId = "app-1";
         String esId = "test-id-123";
@@ -337,7 +337,7 @@ class ContentPartnerRegistrationServiceImplTest {
     }
 
     @Test
-    void testRead_ByIdAndEmail_NotFound() throws Exception {
+    void testRead_ByIdAndEmail_NotFound()  {
         String email = "a@b.com";
         String applicationId = "1";
         String esId = "2";
@@ -358,7 +358,7 @@ class ContentPartnerRegistrationServiceImplTest {
 
     // SEARCH TEST CASES
     @Test
-    void testSearch_Success() throws Exception {
+    void testSearch_Success()  {
         when(accessTokenValidator.verifyUserToken(token)).thenReturn("user-1");
 
         SearchCriteria criteria = new SearchCriteria();
@@ -394,7 +394,7 @@ class ContentPartnerRegistrationServiceImplTest {
     }
 
     @Test
-    void testSearch_Exception() throws Exception {
+    void testSearch_Exception()  {
         when(accessTokenValidator.verifyUserToken(token)).thenReturn("user-1");
 
         SearchCriteria criteria = new SearchCriteria();

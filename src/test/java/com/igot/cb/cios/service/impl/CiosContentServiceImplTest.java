@@ -636,7 +636,7 @@ class CiosContentServiceImplTest {
      * performs the search using EsUtilService.
      */
     @Test
-    void test_searchCotent_2() throws Exception {
+    void test_searchCotent_2()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setFilterCriteriaMap(null);
@@ -673,7 +673,7 @@ class CiosContentServiceImplTest {
      * performs the search using EsUtilService.
      */
     @Test
-    void test_searchCotent_3() throws Exception {
+    void test_searchCotent_3()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         HashMap<String, Object> filterCriteriaMap = new HashMap<>();
@@ -708,7 +708,7 @@ class CiosContentServiceImplTest {
      * the search result from ElasticSearch with isActive set to true by default.
      */
     @Test
-    void test_searchCotent_4() throws Exception {
+    void test_searchCotent_4()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         SearchResult expectedResult = new SearchResult();
@@ -1025,7 +1025,7 @@ class CiosContentServiceImplTest {
     }
 
     @Test
-    void testFetchData_RecordFromPostgresDb() throws Exception {
+    void testFetchData_RecordFromPostgresDb()  {
         String externalId = "ext123";
         String partnerId = "partner1";
         String cacheKey = externalId + "_" + partnerId;
@@ -1140,7 +1140,7 @@ class CiosContentServiceImplTest {
         return objenesis.newInstance(CiosContentServiceImpl.class);
     }
 
-    private CiosContentServiceImpl prepareServiceWithMocks(JsonNode mockedNode) throws Exception {
+    private CiosContentServiceImpl prepareServiceWithMocks(JsonNode mockedNode)  {
         CiosContentServiceImpl service = newUninitializedService();
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -1298,7 +1298,7 @@ class CiosContentServiceImplTest {
     }
 
     @Test
-    void testOnboardContent_DraftContent_Success() throws Exception {
+    void testOnboardContent_DraftContent_Success()  {
         ObjectDto dto = new ObjectDto();
         dto.setStatus("draft");
 
@@ -1457,7 +1457,7 @@ class CiosContentServiceImplTest {
     }
 
     @Test
-    void test_readContent_cacheMiss_callsEsAndCachesResult() throws Exception {
+    void test_readContent_cacheMiss_callsEsAndCachesResult()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
 

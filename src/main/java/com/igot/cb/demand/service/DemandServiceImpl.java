@@ -22,12 +22,10 @@ import com.igot.cb.pores.elasticsearch.service.EsUtilService;
 import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
+import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
 import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.ValidationMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -42,7 +40,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -74,6 +71,8 @@ public class DemandServiceImpl implements DemandService {
 
     private final RequestHandlerServiceImpl requestHandlerService;
 
+    private final PayloadValidation payloadValidation;
+
     private static final Random RANDOM = new Random();
 
     @Autowired
@@ -88,7 +87,8 @@ public class DemandServiceImpl implements DemandService {
                               CassandraOperation cassandraOperation,
                               Producer kafkaProducer,
                               CbServerProperties propertiesConfig,
-                              RequestHandlerServiceImpl requestHandlerService) throws IOException {
+                              RequestHandlerServiceImpl requestHandlerService,
+                              PayloadValidation payloadValidation) throws IOException {
         this.esUtilService = esUtilService;
         this.demandRepository = demandRepository;
         this.cacheService = cacheService;
@@ -99,6 +99,7 @@ public class DemandServiceImpl implements DemandService {
         this.cbServerProperties = cbServerProperties;
         this.cassandraOperation = cassandraOperation;
         this.kafkaProducer = kafkaProducer;
+        this.payloadValidation = payloadValidation;
         this.propertiesConfig = propertiesConfig;
         this.requestHandlerService = requestHandlerService;
         this.statusTransitionConfig = new StatusTransitionConfig(Constants.STATUS_TRANSITION_PATH);
@@ -505,24 +506,7 @@ public class DemandServiceImpl implements DemandService {
     }
 
     public void validatePayload(String fileName, JsonNode payload) {
-        try {
-            JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
-            InputStream schemaStream = schemaFactory.getClass().getResourceAsStream(fileName);
-            JsonSchema schema = schemaFactory.getSchema(schemaStream);
-
-            Set<ValidationMessage> validationMessages = schema.validate(payload);
-            if (!validationMessages.isEmpty()) {
-                StringBuilder errorMessage = new StringBuilder("Validation error(s): \n");
-                for (ValidationMessage message : validationMessages) {
-                    errorMessage.append(message.getMessage()).append("\n");
-                }
-                logger.error("Validation Error: {}", errorMessage.toString());
-                throw new CustomException("Validation Error", errorMessage.toString(), HttpStatus.BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to validate payload", e);
-            throw new CustomException("Failed to validate payload", e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+        payloadValidation.validatePayload(fileName, payload);
     }
 
     public CustomResponse validateUser(String rootOrgId, CustomResponse response, String userId) {

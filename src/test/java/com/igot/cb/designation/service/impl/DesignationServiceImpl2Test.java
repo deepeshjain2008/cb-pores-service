@@ -16,8 +16,10 @@ import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
+import com.igot.cb.pores.util.TermCreationHelper;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,6 +60,12 @@ class DesignationServiceImpl2Test {
     @Mock private AccessTokenValidator accessTokenValidator;
     @Mock private ObjectMapper objectMapper;
     private static final String TOKEN = "dummy-token";
+
+    @BeforeEach
+    void setUp() {
+        TermCreationHelper termCreationHelper = new TermCreationHelper(cbServerProperties, outboundRequestHandlerServiceImpl, objectMapper);
+        ReflectionTestUtils.setField(designationService, "termCreationHelper", termCreationHelper);
+    }
 
     @Test
     void testValidateFileAndProcessRows_xlsx() throws Exception {

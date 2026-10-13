@@ -14,6 +14,7 @@ import com.igot.cb.pores.elasticsearch.service.EsUtilService;
 import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
+import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
 import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
@@ -110,6 +111,7 @@ class DemandServiceImplMethodTest {
         ReflectionTestUtils.setField(demandService, "redisTemplateString", redisTemplateString);
         ReflectionTestUtils.setField(demandService, "esUtilService", esUtilService);
         ReflectionTestUtils.setField(demandService, "logger", LoggerFactory.getLogger(DemandServiceImpl.class));
+        ReflectionTestUtils.setField(demandService, "payloadValidation", new PayloadValidation());
         // Mock statusTransitionConfig to avoid file read
         ReflectionTestUtils.setField(demandService, "statusTransitionConfig", mock(StatusTransitionConfig.class));
 

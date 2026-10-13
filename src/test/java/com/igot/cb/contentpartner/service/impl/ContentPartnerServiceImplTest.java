@@ -458,7 +458,7 @@ class ContentPartnerServiceImplTest {
      * when the search criteria is valid and the search operation is successful.
      */
     @Test
-    void test_searchEntity_2() throws Exception {
+    void test_searchEntity_2()  {
         // Arrange
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearchString");
@@ -508,7 +508,7 @@ class ContentPartnerServiceImplTest {
     }
 
     @Test
-    void test_searchEntity_CacheHit() throws Exception {
+    void test_searchEntity_CacheHit()  {
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearchString");
 
@@ -528,7 +528,7 @@ class ContentPartnerServiceImplTest {
     }
 
     @Test
-    void testCreatePartner_Success() throws Exception {
+    void testCreatePartner_Success()  {
         // Arrange
         ObjectNode input = realObjectMapper.createObjectNode();
         input.put(Constants.CONTENT_PARTNER_NAME, "TestPartner");
@@ -615,7 +615,7 @@ class ContentPartnerServiceImplTest {
         assertEquals(Constants.FAILED, response.getParams().getStatus());
     }
     @Test
-    void testCreatePartner_GeneratesIdAndPartnerCode() throws Exception {
+    void testCreatePartner_GeneratesIdAndPartnerCode()  {
         // Arrange
         ObjectNode input = realObjectMapper.createObjectNode();
         input.put(Constants.CONTENT_PARTNER_NAME, "New Partner");
@@ -641,7 +641,7 @@ class ContentPartnerServiceImplTest {
     }
 
     @Test
-    void testCreatePartner_RegeneratesPartnerCodeIfExists() throws Exception {
+    void testCreatePartner_RegeneratesPartnerCodeIfExists()  {
         // Arrange
         ObjectNode input = realObjectMapper.createObjectNode();
         input.put(Constants.CONTENT_PARTNER_NAME, "TestPartner");
@@ -748,7 +748,7 @@ class ContentPartnerServiceImplTest {
 
 
     @Test
-    void testUpdateContentPartner_Success() throws Exception {
+    void testUpdateContentPartner_Success()  {
         ObjectNode dataNode = realObjectMapper.createObjectNode();
         dataNode.put(Constants.CONTENT_PARTNER_NAME, "UpdatedName");
 
@@ -1000,7 +1000,7 @@ class ContentPartnerServiceImplTest {
     }
 
     @Test
-    void testGeneratePartnerCode_PartnerNameWithSpaces() throws Exception {
+    void testGeneratePartnerCode_PartnerNameWithSpaces()  {
         ObjectNode input = realObjectMapper.createObjectNode();
         input.put(Constants.CONTENT_PARTNER_NAME, "  SpacedPartner  ");
 
@@ -1024,7 +1024,7 @@ class ContentPartnerServiceImplTest {
     }
 
     @Test
-    void testGeneratePartnerCode_NonAlphaPartnerName() throws Exception {
+    void testGeneratePartnerCode_NonAlphaPartnerName()  {
         ObjectNode input = realObjectMapper.createObjectNode();
         input.put(Constants.CONTENT_PARTNER_NAME, "123 456");
 
@@ -1048,7 +1048,7 @@ class ContentPartnerServiceImplTest {
     }
 
     @Test
-    void testGeneratePartnerCode_MultipleCollisionsBeforeUniqueCode() throws Exception {
+    void testGeneratePartnerCode_MultipleCollisionsBeforeUniqueCode()  {
         ObjectNode input = realObjectMapper.createObjectNode();
         input.put(Constants.CONTENT_PARTNER_NAME, "TestPartner");
 
