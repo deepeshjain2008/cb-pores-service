@@ -964,6 +964,27 @@ class CompetencyThemeServiceImplTest {
     }
 
     /**
+     * Test case for searchCompTheme method when esUtilService throws an exception.
+     * This test verifies that the method returns an INTERNAL_SERVER_ERROR response.
+     */
+    @Test
+    void test_searchCompTheme_esUtilServiceThrows_returnsInternalServerError() {
+        when(cbServerProperties.getJwtSecretKey()).thenReturn("test_secret_key");
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setSearchString("validSearchString");
+
+        when(esUtilService.searchDocuments(anyString(), any(SearchCriteria.class)))
+                .thenThrow(new RuntimeException("es down"));
+
+        CustomResponse response = competencyThemeService.searchCompTheme(searchCriteria);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
+    }
+
+    /**
      * Testcase 4 for @Override public CustomResponse updateCompTheme(JsonNode updatedCompTheme)
      * Path constraints: (updatedCompTheme.has(Constants.ID) && !updatedCompTheme.get(Constants.ID)
      *       .isNull()), !((compTheme.isPresent()))

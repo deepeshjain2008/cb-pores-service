@@ -807,6 +807,37 @@ class CiosContentServiceImplTest {
     }
 
     @Test
+    void test_fetchDataByContentId_malformedCachedJson_throwsCustomException() throws Exception {
+        String contentId = "test-content-id";
+        String cachedJson = "not valid json";
+
+        when(cacheService.getCache(contentId)).thenReturn(cachedJson);
+        when(objectMapper.readValue(eq(cachedJson), ArgumentMatchers.<TypeReference<Object>>any()))
+                .thenThrow(new com.fasterxml.jackson.core.JsonParseException(null, "bad json"));
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> ciosContentService.fetchDataByContentId(contentId));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatusCode());
+    }
+
+    @Test
+    void test_fetchDataByExternalIdAndPartnerId_malformedCachedJson_throwsCustomException() throws Exception {
+        String externalId = "ext-1";
+        String partnerId = "partner-1";
+        String cachedJson = "not valid json";
+
+        when(cacheService.getCache(externalId + "_" + partnerId)).thenReturn(cachedJson);
+        when(objectMapper.readValue(eq(cachedJson), ArgumentMatchers.<TypeReference<Object>>any()))
+                .thenThrow(new com.fasterxml.jackson.core.JsonParseException(null, "bad json"));
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> ciosContentService.fetchDataByExternalIdAndPartnerId(externalId, partnerId));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatusCode());
+    }
+
+    @Test
     void test_fetchDataByContentId_success_fromDB() {
         // Arrange
         String contentId = "test-content-id";

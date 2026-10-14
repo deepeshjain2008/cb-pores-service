@@ -15,6 +15,7 @@ import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
+import com.igot.cb.pores.util.FileProcessService;
 import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.pores.util.TermCreationHelper;
 import org.apache.poi.ss.usermodel.*;
@@ -31,11 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,65 +62,7 @@ class DesignationServiceImpl2Test {
     void setUp() {
         TermCreationHelper termCreationHelper = new TermCreationHelper(cbServerProperties, outboundRequestHandlerServiceImpl, objectMapper);
         ReflectionTestUtils.setField(designationService, "termCreationHelper", termCreationHelper);
-    }
-
-    @Test
-    void testValidateFileAndProcessRows_xlsx() throws Exception {
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet();
-        Row header = sheet.createRow(0);
-        header.createCell(0).setCellValue("Designation");
-        Row data = sheet.createRow(1);
-        data.createCell(0).setCellValue("Developer");
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        workbook.write(out);
-        workbook.close();
-
-        MultipartFile file = new MockMultipartFile("file", "input.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", out.toByteArray());
-
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("validateFileAndProcessRows", MultipartFile.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> result = (List<Map<String, String>>) method.invoke(designationService, file);
-
-        assertEquals(1, result.size());
-        assertEquals("Developer", result.get(0).get("Designation"));
-    }
-
-    @Test
-    void testProcessCsvAndSendMessage() throws Exception {
-        String csv = "Designation\nEngineer\n";
-        InputStream stream = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
-
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("processCsvAndSendMessage", InputStream.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> result = (List<Map<String, String>>) method.invoke(designationService, stream);
-
-        assertEquals(1, result.size());
-        assertEquals("Engineer", result.get(0).get("Designation"));
-    }
-
-    @Test
-    void testProcessSheetAndSendMessage() throws Exception {
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet();
-        Row header = sheet.createRow(0);
-        header.createCell(0).setCellValue("Designation");
-        Row data = sheet.createRow(1);
-        data.createCell(0).setCellValue("Analyst");
-
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("processSheetAndSendMessage", Sheet.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> result = (List<Map<String, String>>) method.invoke(designationService, sheet);
-
-        assertEquals(1, result.size());
-        assertEquals("Analyst", result.get(0).get("Designation"));
+        ReflectionTestUtils.setField(designationService, "fileProcessService", new FileProcessService());
     }
 
     @Test

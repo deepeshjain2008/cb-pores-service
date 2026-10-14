@@ -3,6 +3,7 @@ package com.igot.cb.pores.util;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.igot.cb.pores.exceptions.CustomException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -577,6 +578,30 @@ class FileProcessServiceTest {
             RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> fileProcessService.processExcelFile(multipartFile));
             assertEquals("Sheet processing error", exception.getMessage());
+        }
+    }
+
+    @Test
+    void testExcelProcessingWithNullHeaderRow_wrapsInCustomException() throws IOException {
+        // Given: a workbook whose sheet has no header row, so iterating data rows NPEs
+        // inside processSheetAndSendMessage's own try block (not before it).
+        when(multipartFile.getOriginalFilename()).thenReturn("test.xlsx");
+        when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
+
+        Workbook workbook = mock(Workbook.class);
+        Sheet sheet = mock(Sheet.class);
+        when(sheet.getLastRowNum()).thenReturn(1);
+        when(sheet.getRow(0)).thenReturn(null);
+        Row dataRow = mock(Row.class);
+        when(sheet.getRow(1)).thenReturn(dataRow);
+        when(workbook.getSheetAt(0)).thenReturn(sheet);
+
+        try (MockedStatic<WorkbookFactory> mockedFactory = mockStatic(WorkbookFactory.class)) {
+            mockedFactory.when(() -> WorkbookFactory.create(any(InputStream.class))).thenReturn(workbook);
+
+            CustomException exception = assertThrows(CustomException.class,
+                    () -> fileProcessService.processExcelFile(multipartFile));
+            assertNotNull(exception);
         }
     }
 

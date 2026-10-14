@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
+import com.igot.cb.pores.Service.OutboundRequestHandlerServiceImpl;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,7 @@ class NotificationConsumerTest {
     private CassandraOperation cassandraOperation;
 
     @Mock
-    private RequestHandlerServiceImpl requestHandlerService;
+    private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
     @Mock
     private CbServerProperties cbServerProperties;
@@ -86,7 +86,7 @@ class NotificationConsumerTest {
     void testDemandContentConsumer_invalidPayload_shouldLogError() {
         ConsumerRecord<String, String> record = new ConsumerRecord<>("test", 0, 0L, "key", "{invalidJson");
         notificationConsumer.demandContentConsumer(record);
-        verifyNoInteractions(requestHandlerService);
+        verifyNoInteractions(outboundRequestHandlerServiceImpl);
     }
 
     @Test
@@ -122,13 +122,13 @@ class NotificationConsumerTest {
         when(cbServerProperties.getNotifyServiceHost()).thenReturn("http://notification-host");
 
         Map<String, Object> responseMap = Map.of("status", "success");
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), isNull())).thenReturn(responseMap);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), isNull())).thenReturn(responseMap);
 
         Method method = NotificationConsumer.class.getDeclaredMethod("sendNotificationToProvidersAsync", Map.class);
         method.setAccessible(true);
         method.invoke(notificationConsumer, input);
 
-        verify(requestHandlerService, times(1)).fetchResultUsingPost(contains("http://notification-host"), anyMap(), isNull());
+        verify(outboundRequestHandlerServiceImpl, times(1)).fetchResultUsingPost(contains("http://notification-host"), anyMap(), isNull());
     }
 
     @Test
@@ -138,14 +138,14 @@ class NotificationConsumerTest {
         Method method = NotificationConsumer.class.getDeclaredMethod("sendNotification", Map.class, String.class);
         method.setAccessible(true);
 
-        doThrow(new RuntimeException("post error")).when(requestHandlerService)
+        doThrow(new RuntimeException("post error")).when(outboundRequestHandlerServiceImpl)
                 .fetchResultUsingPost(anyString(), anyMap(), isNull());
 
         Map<String, Object> dummyRequest = Map.of("key", "value");
 
         method.invoke(notificationConsumer, dummyRequest, "/notify/path");
 
-        verify(requestHandlerService, times(1)).fetchResultUsingPost(anyString(), anyMap(), isNull());
+        verify(outboundRequestHandlerServiceImpl, times(1)).fetchResultUsingPost(anyString(), anyMap(), isNull());
     }
 
     @Test
@@ -163,7 +163,7 @@ class NotificationConsumerTest {
         Map<String, Object> result = Map.of(Constants.RESPONSE, response);
         Map<String, Object> fullResponse = Map.of(Constants.RESPONSE_CODE, Constants.OK, Constants.RESULT, result);
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
                 .thenReturn(fullResponse);
 
         List<String> resultEmails = notificationConsumer.fetchEmailFromUserId(userIds);
@@ -178,7 +178,7 @@ class NotificationConsumerTest {
         when(cbServerProperties.getSbUrl()).thenReturn("http://localhost/");
         when(cbServerProperties.getUserSearchEndPoint()).thenReturn("search");
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
                 .thenReturn(null);
 
         List<String> resultEmails = notificationConsumer.fetchEmailFromUserId(userIds);
@@ -215,7 +215,7 @@ class NotificationConsumerTest {
         when(cbServerProperties.getSbUrl()).thenReturn("http://dummyurl.com/");
         when(cbServerProperties.getUserSearchEndPoint()).thenReturn("searchUser");
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
                 .thenReturn(searchProfileApiResp);
 
         List<String> emails = notificationConsumer.getCBPAdminDetails(rootOrgIds);
@@ -241,7 +241,7 @@ class NotificationConsumerTest {
         when(cbServerProperties.getSbUrl()).thenReturn("http://dummyurl.com/");
         when(cbServerProperties.getUserSearchEndPoint()).thenReturn("searchUser");
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
                 .thenReturn(searchProfileApiResp);
 
         Exception ex = assertThrows(Exception.class, () -> notificationConsumer.getCBPAdminDetails(rootOrgIds));
@@ -255,7 +255,7 @@ class NotificationConsumerTest {
         when(cbServerProperties.getSbUrl()).thenReturn("http://dummyurl.com/");
         when(cbServerProperties.getUserSearchEndPoint()).thenReturn("searchUser");
         // Simulate null response from fetchResultUsingPost
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
                 .thenReturn(null);
 
         Exception ex = assertThrows(Exception.class, () -> notificationConsumer.getCBPAdminDetails(rootOrgIds));
@@ -318,8 +318,8 @@ class NotificationConsumerTest {
 
         when(cbServerProperties.getNotifyServiceHost()).thenReturn("http://notifyhost");
 
-        // Mock requestHandlerService call
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), any())).thenReturn(Collections.singletonMap("status", "ok"));
+        // Mock outboundRequestHandlerServiceImpl call
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), any())).thenReturn(Collections.singletonMap("status", "ok"));
 
         // Mock ObjectMapper writeValueAsString call
         when(mapper.writeValueAsString(any())).thenReturn("{}");
@@ -327,7 +327,7 @@ class NotificationConsumerTest {
         ReflectionTestUtils.invokeMethod(spyConsumer, "sendNotification", request, urlPath);
 
         // If no exceptions thrown, success
-        verify(requestHandlerService).fetchResultUsingPost(eq("http://notifyhost/notifyAsync"), anyMap(), any());
+        verify(outboundRequestHandlerServiceImpl).fetchResultUsingPost(eq("http://notifyhost/notifyAsync"), anyMap(), any());
     }
 
     @Test
@@ -354,7 +354,7 @@ class NotificationConsumerTest {
         ConsumerRecord<String, String> record = new ConsumerRecord<>("test-topic", 0, 0L, "key", json);
 
         // Inject dependencies via reflection
-        ReflectionTestUtils.setField(notificationConsumer, "requestHandlerService", requestHandlerService);
+        ReflectionTestUtils.setField(notificationConsumer, "outboundRequestHandlerServiceImpl", outboundRequestHandlerServiceImpl);
         ReflectionTestUtils.setField(notificationConsumer, "cassandraOperation", cassandraOperation);
         // ReflectionTestUtils.setField(notificationConsumer, "cbServerProperties", cbServerProperties);
 
@@ -402,7 +402,7 @@ class NotificationConsumerTest {
         searchResponse.put("result", result);
         searchResponse.put("responseCode", "OK");
 
-        lenient().when(requestHandlerService.fetchResultUsingPost(anyString(), any(), any()))
+        lenient().when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), any(), any()))
                 .thenReturn(searchResponse);
 
         // Mock config properties
@@ -418,7 +418,7 @@ class NotificationConsumerTest {
         notificationConsumer.demandContentConsumer(record);
 
         // Then
-        verify(requestHandlerService, timeout(3000).atLeastOnce())
+        verify(outboundRequestHandlerServiceImpl, timeout(3000).atLeastOnce())
                 .fetchResultUsingPost(anyString(), anyMap(), any());
     }
 

@@ -191,6 +191,60 @@ class EsUtilServiceImplTest {
         assertEquals(1L, result.getTotalCount());
     }
 
+    @Test
+    void searchDocuments_withBooleanListFilter_buildsTermsQuery() throws IOException {
+        String esIndexName = "test-index";
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setPageNumber(0);
+        searchCriteria.setPageSize(10);
+        HashMap<String, Object> filters = new HashMap<>();
+        filters.put("isActive", new ArrayList<>(List.of(true, false)));
+        searchCriteria.setFilterCriteriaMap(filters);
+
+        SearchResponse<Object> mockSearchResponse = mock(SearchResponse.class);
+        HitsMetadata<Object> hitsMetadata = mock(HitsMetadata.class);
+        TotalHits totalHits = mock(TotalHits.class);
+        List<Hit<Object>> hits = new ArrayList<>();
+
+        when(totalHits.value()).thenReturn(0L);
+        when(hitsMetadata.total()).thenReturn(totalHits);
+        when(hitsMetadata.hits()).thenReturn(hits);
+        when(mockSearchResponse.hits()).thenReturn(hitsMetadata);
+        when(elasticsearchClient.search(any(SearchRequest.class), eq(Object.class)))
+                .thenReturn(mockSearchResponse);
+
+        SearchResult result = esUtilService.searchDocuments(esIndexName, searchCriteria);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void searchDocuments_withStringListFilter_buildsTermsQuery() throws IOException {
+        String esIndexName = "test-index";
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setPageNumber(0);
+        searchCriteria.setPageSize(10);
+        HashMap<String, Object> filters = new HashMap<>();
+        filters.put("status", new ArrayList<>(List.of("active", "pending")));
+        searchCriteria.setFilterCriteriaMap(filters);
+
+        SearchResponse<Object> mockSearchResponse = mock(SearchResponse.class);
+        HitsMetadata<Object> hitsMetadata = mock(HitsMetadata.class);
+        TotalHits totalHits = mock(TotalHits.class);
+        List<Hit<Object>> hits = new ArrayList<>();
+
+        when(totalHits.value()).thenReturn(0L);
+        when(hitsMetadata.total()).thenReturn(totalHits);
+        when(hitsMetadata.hits()).thenReturn(hits);
+        when(mockSearchResponse.hits()).thenReturn(hitsMetadata);
+        when(elasticsearchClient.search(any(SearchRequest.class), eq(Object.class)))
+                .thenReturn(mockSearchResponse);
+
+        SearchResult result = esUtilService.searchDocuments(esIndexName, searchCriteria);
+
+        assertNotNull(result);
+    }
+
 
     @Test
     void deleteDocument_VerifyRefreshRequestParameters() throws IOException {

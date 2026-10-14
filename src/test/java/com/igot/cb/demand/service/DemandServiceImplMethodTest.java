@@ -17,7 +17,7 @@ import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
+import com.igot.cb.pores.Service.OutboundRequestHandlerServiceImpl;
 import org.apache.poi.ss.formula.functions.T;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,7 +72,7 @@ class DemandServiceImplMethodTest {
     private Producer kafkaProducer;
 
     @Mock
-    private RequestHandlerServiceImpl requestHandlerService;
+    private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
     @Mock
     private CbServerProperties cbServerProperties;
@@ -105,7 +105,7 @@ class DemandServiceImplMethodTest {
         ReflectionTestUtils.setField(demandService, "accessTokenValidator", accessTokenValidator);
         ReflectionTestUtils.setField(demandService, "cassandraOperation", cassandraOperation);
         ReflectionTestUtils.setField(demandService, "kafkaProducer", kafkaProducer);
-        ReflectionTestUtils.setField(demandService, "requestHandlerService", requestHandlerService);
+        ReflectionTestUtils.setField(demandService, "outboundRequestHandlerServiceImpl", outboundRequestHandlerServiceImpl);
         ReflectionTestUtils.setField(demandService, "cbServerProperties", cbServerProperties);
         ReflectionTestUtils.setField(demandService, "propertiesConfig", propertiesConfig);
         ReflectionTestUtils.setField(demandService, "redisTemplateString", redisTemplateString);
@@ -391,7 +391,7 @@ class DemandServiceImplMethodTest {
 
     @Test
     void testIsSpvRequestTrue() {
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), any())).thenReturn(
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), any())).thenReturn(
                 Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of(Constants.SPV_ADMIN)))));
         boolean result = demandService.isSpvRequest("user123", Constants.SPV_ADMIN);
         assertTrue(result);
@@ -399,7 +399,7 @@ class DemandServiceImplMethodTest {
 
     @Test
     void testIsSpvRequestFalse() {
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), any())).thenReturn(
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), any())).thenReturn(
                 Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of("otherRole")))));
         boolean result = demandService.isSpvRequest("user123", Constants.SPV_ADMIN);
         assertFalse(result);
@@ -484,7 +484,7 @@ class DemandServiceImplMethodTest {
         readData.put(Constants.RESULT, resultMap);
 
 // WHEN: mock the actual method call
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
                 .thenReturn(readData);
 
 
@@ -496,12 +496,12 @@ class DemandServiceImplMethodTest {
         // Avoid NPE from esUtilService.addDocument
         when(esUtilService.addDocument(
                 anyString(), anyString(), anyString(), anyMap(), anyString())).thenReturn("");
-        // Mock requestHandlerService to return provider data
+        // Mock outboundRequestHandlerServiceImpl to return provider data
         Map<String, Object> learnerResp = Map.of(
                 Constants.RESPONSE_CODE, Constants.OK,
                 Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.CONTENT, List.of(Map.of(Constants.ROOT_ORG_ID, rootOrgId))))
         );
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(learnerResp);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(learnerResp);
 
         when(cbServerProperties.getElasticDemandJsonPath()).thenReturn("dummy/path");
         when(cbServerProperties.getDemandRequestKafkaTopic()).thenReturn("demand-topic");
@@ -611,7 +611,7 @@ class DemandServiceImplMethodTest {
         Map<String, Object> readData = new HashMap<>();
         readData.put(Constants.RESULT, resultMap);
 
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
                 .thenReturn(readData);
 
         // Kafka and ES-related config
@@ -632,7 +632,7 @@ class DemandServiceImplMethodTest {
                         Map.of(Constants.ROOT_ORG_ID, rootOrgId)
                 )))
         );
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
                 .thenReturn(learnerResp);
 
         // Act
@@ -723,7 +723,7 @@ class DemandServiceImplMethodTest {
         Map<String, Object> resultMap = Map.of(Constants.RESPONSE, responseMap);
         Map<String, Object> readData = Map.of(Constants.RESULT, resultMap);
 
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
                 .thenReturn(readData);
 
         when(cbServerProperties.getElasticDemandJsonPath()).thenReturn("dummy/elastic/path.json");
@@ -733,7 +733,7 @@ class DemandServiceImplMethodTest {
                 Constants.RESPONSE_CODE, Constants.OK,
                 Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.CONTENT, List.of(Map.of(Constants.ROOT_ORG_ID, rootOrgId))))
         );
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(learnerResp);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(learnerResp);
 
         when(cbServerProperties.getElasticDemandJsonPath()).thenReturn("dummy/path");
         when(cbServerProperties.getDemandRequestKafkaTopic()).thenReturn("demand-topic");

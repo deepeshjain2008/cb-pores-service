@@ -16,6 +16,7 @@ import com.igot.cb.pores.dto.CustomResponse;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.elasticsearch.dto.SearchResult;
 import com.igot.cb.pores.elasticsearch.service.EsUtilService;
+import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
@@ -23,7 +24,6 @@ import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.pores.util.TermCreationHelper;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Timestamp;
 import java.util.*;
@@ -991,6 +991,25 @@ class DesignationServiceImplTest {
     }
 
     /**
+     * Test case for updateDesignation method when an unexpected exception occurs while processing.
+     * This test verifies that the method wraps the failure in a CustomException with an INTERNAL_SERVER_ERROR status.
+     */
+    @Test
+    void test_updateDesignation_unexpectedException_wrapsInCustomException() {
+        ObjectMapper realObjectMapper = new ObjectMapper();
+        ObjectNode updateDesignationDetails = realObjectMapper.createObjectNode();
+        updateDesignationDetails.put(Constants.ID, "DESG-000001");
+
+        when(designationRepository.findById("DESG-000001"))
+                .thenThrow(new RuntimeException("DB connection lost"));
+
+        CustomException exception = assertThrows(CustomException.class, () ->
+                designationService.updateDesignation(updateDesignationDetails));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatusCode());
+    }
+
+    /**
      * Test case for updateDesignation method when the designation exists and is successfully updated.
      * This test covers the path where the designation ID exists, the designation is present in the repository,
      * and the update operation is successful.
@@ -1074,6 +1093,25 @@ class DesignationServiceImplTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
         assertEquals(Constants.ID_NOT_FOUND, response.getMessage());
+    }
+
+    /**
+     * Test case for updateIdentifiersToDesignation method when an unexpected exception occurs.
+     * Expected: the failure is wrapped in a CustomException with an INTERNAL_SERVER_ERROR status.
+     */
+    @Test
+    void test_updateIdentifiersToDesignation_unexpectedException_wrapsInCustomException() {
+        ObjectNode updateDesignationDetails = new ObjectMapper().createObjectNode();
+        updateDesignationDetails.put(Constants.ID, "DESG-000001");
+        updateDesignationDetails.putArray(Constants.REF_NODES).add("REF-001");
+
+        when(designationRepository.findById("DESG-000001"))
+                .thenThrow(new RuntimeException("DB connection lost"));
+
+        CustomException exception = assertThrows(CustomException.class, () ->
+                designationService.updateIdentifiersToDesignation(updateDesignationDetails));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatusCode());
     }
 
     /**
@@ -1305,52 +1343,6 @@ class DesignationServiceImplTest {
         assertEquals("DESG002", childOutput.get("identifier"));
     }
 
-
-    @Test
-    void test_processExcelFile_csv_success() throws Exception {
-        String csvContent = "Name,Joining Date\nJane Doe,2024-06-01";
-        MultipartFile mockCsvFile = new MockMultipartFile("file", "test.csv", "text/csv", csvContent.getBytes());
-
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("processExcelFile", MultipartFile.class);
-        method.setAccessible(true);
-        List<Map<String, String>> result = (List<Map<String, String>>) method.invoke(designationService, mockCsvFile);
-
-        assertEquals(1, result.size());
-        assertEquals("Jane Doe", result.get(0).get("Name"));
-        assertEquals("2024-06-01", result.get(0).get("Joining Date"));
-    }
-
-    @Test
-    void test_processExcelFile_invalidFileExtension_shouldThrowException() {
-        MultipartFile mockFile = new MockMultipartFile("file", "invalid.txt", "text/plain", "invalid content".getBytes());
-
-        Exception exception = assertThrows(InvocationTargetException.class, () -> {
-            Method method = DesignationServiceImpl.class.getDeclaredMethod("processExcelFile", MultipartFile.class);
-            method.setAccessible(true);
-            method.invoke(designationService, mockFile);
-        });
-
-        assertTrue(exception.getCause().getMessage().contains("Unsupported file type"));
-    }
-
-    @Test
-    void test_processExcelFile_nullFileName_shouldThrowException() throws Exception {
-        // Mock MultipartFile with null filename
-        MultipartFile mockFile = Mockito.mock(MultipartFile.class);
-        when(mockFile.getOriginalFilename()).thenReturn(null);
-
-        // Invoke private method via reflection
-        Method method = DesignationServiceImpl.class.getDeclaredMethod("processExcelFile", MultipartFile.class);
-        method.setAccessible(true);
-
-        InvocationTargetException exception = assertThrows(InvocationTargetException.class, () -> {
-            method.invoke(designationService, mockFile);
-        });
-
-        // Assert that the cause is the RuntimeException with correct message
-        assertTrue(exception.getCause() instanceof RuntimeException);
-        assertEquals("File name is null", exception.getCause().getMessage());
-    }
 
     @Test
     void test_createDesignationEntity_shouldReturnEntityWithExpectedFields() throws Exception {

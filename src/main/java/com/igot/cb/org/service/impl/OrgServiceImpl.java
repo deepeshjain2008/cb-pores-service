@@ -11,7 +11,6 @@ import com.igot.cb.pores.exceptions.CustomException;
 import com.igot.cb.pores.util.*;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -43,8 +42,6 @@ public class OrgServiceImpl implements OrgService {
     private final DemandService demandService;
 
     private final Producer kafkaProducer;
-
-    private final RequestHandlerServiceImpl requestHandlerService;
 
     @Override
     public ApiResponse readFramework(String frameworkName, String orgId, String termName, String userAuthToken) {
@@ -140,7 +137,7 @@ public class OrgServiceImpl implements OrgService {
     public boolean isSpvRequest(String userId, List<String> requiredRoles) {
         Map<String, String> header = new HashMap<>();
         log.info("isSpvRequest started for userId: {}", userId);
-        Map<String, Object> readData = (Map<String, Object>) requestHandlerService
+        Map<String, Object> readData = (Map<String, Object>) outboundRequestHandlerServiceImpl
                 .fetchUsingGetWithHeadersProfile(cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId,
                         header);
         Map<String, Object> result = (Map<String, Object>) readData.get(Constants.RESULT);

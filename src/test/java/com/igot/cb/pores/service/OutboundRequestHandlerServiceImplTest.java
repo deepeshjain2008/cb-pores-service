@@ -311,6 +311,28 @@ class OutboundRequestHandlerServiceImplTest {
     }
 
     @Test
+    void testFetchResultUsingPost_withHeaders_jsonProcessingException_debugEnabled() throws Exception {
+        String uri = "http://example.com/postWithHeaders";
+        Map<String, String> headersMap = Map.of("Authorization", "Bearer token");
+
+        Field logField = OutboundRequestHandlerServiceImpl.class.getDeclaredField("log");
+        logField.setAccessible(true);
+        logField.set(service, mockLogger);
+        when(mockLogger.isDebugEnabled()).thenReturn(true);
+
+        Object badRequest = new Object() {
+            public Object getSelf() {
+                return this;
+            }
+        };
+
+        Map<String, Object> response = service.fetchResultUsingPost(uri, badRequest, headersMap);
+
+        assertNull(response);
+        verify(mockLogger).error(any(JsonProcessingException.class));
+    }
+
+    @Test
     void testFetchResultUsingPatch_success() throws NoSuchFieldException, IllegalAccessException {
         String uri = "http://example.com/patch";
         Map<String, Object> request = Map.of("field", "value");
@@ -348,6 +370,24 @@ class OutboundRequestHandlerServiceImplTest {
 
         assertNotNull(response);
         assertEquals("patch_error", response.get("error"));
+    }
+
+    @Test
+    void testFetchResultUsingPatch_httpClientErrorException_malformedResponseBody() {
+        String uri = "http://example.com/patch";
+        Map<String, Object> request = Map.of("field", "value");
+        Map<String, String> headersMap = Map.of("Authorization", "Bearer token");
+
+        String errorBody = "not valid json";
+        HttpClientErrorException exception = HttpClientErrorException.create(
+                HttpStatus.BAD_REQUEST, "Bad Request", HttpHeaders.EMPTY, errorBody.getBytes(), null);
+
+        when(restTemplate.patchForObject(eq(uri), any(HttpEntity.class), eq(Map.class))).thenThrow(exception);
+
+        Map<String, Object> response = service.fetchResultUsingPatch(uri, request, headersMap);
+
+        // Unparseable error body -> parseErrorResponseBody returns null -> falls back to empty map
+        assertEquals(MapUtils.EMPTY_MAP, response);
     }
 
     @Test

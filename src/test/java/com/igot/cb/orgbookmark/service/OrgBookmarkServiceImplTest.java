@@ -37,6 +37,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -130,6 +131,27 @@ class OrgBookmarkServiceImplTest {
 
         assertThrows(CustomException.class, () ->
                 orgBookmarkService.createOrgBookmark(validPayload.deepCopy(), "token"));
+    }
+
+    @Test
+    void testCreateOrgBookmark_duplicateCategoryActiveBookmarkExists_returnsBadRequest() {
+        when(cbServerProperties.getBookmarkDuplicateNotAllowedCategory())
+                .thenReturn(List.of("testCategory"));
+        when(accessTokenValidator.fetchUserIdFromAccessToken(anyString())).thenReturn("user123");
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        SearchResult searchResult = new SearchResult();
+        when(esUtilService.searchDocuments(eq(Constants.INDEX_NAME_FOR_ORG_BOOKMARK), any()))
+                .thenReturn(searchResult);
+        Map<String, Object> convertedMap = new HashMap<>();
+        convertedMap.put(Constants.TOTAL_COUNT, 1L);
+        when(objectMapper.convertValue(eq(searchResult), eq(Map.class))).thenReturn(convertedMap);
+
+        ApiResponse response = orgBookmarkService.createOrgBookmark(validPayload.deepCopy(), "token");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
+        assertEquals(Constants.FAILED, response.getParams().getStatus());
     }
 
     @Test

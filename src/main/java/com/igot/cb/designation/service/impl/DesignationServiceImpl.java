@@ -37,19 +37,14 @@ import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.pores.util.TermCreationHelper;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -62,18 +57,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -89,7 +73,6 @@ public class DesignationServiceImpl implements DesignationService {
 
   private static final String DESIGNATION_FIELD = "Designation";
   private static final String ERROR_WHILE_PROCESSING_FILE = "Error while processing file: {}";
-  private static final String ISO_DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
   private final ObjectMapper objectMapper;
 
@@ -116,11 +99,13 @@ public class DesignationServiceImpl implements DesignationService {
 
   private final TermCreationHelper termCreationHelper;
 
+  private final FileProcessService fileProcessService;
+
 
   @Override
   public void loadDesignation(MultipartFile file, String token) {
     log.info("DesignationServiceImpl::loadDesignationFromExcel");
-    List<Map<String, String>> processedData = processExcelFile(file);
+    List<Map<String, String>> processedData = fileProcessService.processExcelFile(file);
     log.info("No.of processedData from excel: " + processedData.size());
     JsonNode designationJson = objectMapper.valueToTree(processedData);
     AtomicLong startingId = new AtomicLong(designationRepository.count());
@@ -563,141 +548,6 @@ public class DesignationServiceImpl implements DesignationService {
     }
   }
 
-  private List<Map<String, String>> processExcelFile(MultipartFile incomingFile) {
-    log.info("DesignationServiceImpl::processExcelFile");
-    try {
-      return validateFileAndProcessRows(incomingFile);
-    } catch (Exception e) {
-      log.error("Error occurred during file processing: {}", e.getMessage());
-      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private List<Map<String, String>> validateFileAndProcessRows(MultipartFile file) {
-    log.info("DesignationServiceImpl::validateFileAndProcessRows");
-    log.info("DesignationServiceImpl::validateFileAndProcessRows");
-    String fileName = file.getOriginalFilename();
-    if (fileName == null) {
-      throw new CustomException(Constants.ERROR, "File name is null", HttpStatus.BAD_REQUEST);
-    }
-
-    try (InputStream inputStream = file.getInputStream()) {
-      if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-        try (Workbook workbook = WorkbookFactory.create(inputStream)) {
-          Sheet sheet = workbook.getSheetAt(0);
-          return processSheetAndSendMessage(sheet);
-        }
-      } else if (fileName.endsWith(".csv")) {
-        return processCsvAndSendMessage(inputStream);
-      } else {
-        throw new CustomException(Constants.ERROR, "Unsupported file type: " + fileName, HttpStatus.BAD_REQUEST);
-      }
-    } catch (IOException e) {
-      log.error(ERROR_WHILE_PROCESSING_FILE, e.getMessage());
-      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private List<Map<String, String>> processSheetAndSendMessage(Sheet sheet) {
-    log.info("DesignationServiceImpl::processSheetAndSendMessage");
-    try {
-      DataFormatter formatter = new DataFormatter();
-      Row headerRow = sheet.getRow(0);
-      List<Map<String, String>> dataRows = new ArrayList<>();
-      for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
-        Row dataRow = sheet.getRow(rowIndex);
-        if (dataRow == null) {
-          break; // No more data rows, exit the loop
-        }
-        boolean allBlank = true;
-        Map<String, String> rowData = new HashMap<>();
-        for (int colIndex = 0; colIndex < headerRow.getLastCellNum(); colIndex++) {
-          Cell headerCell = headerRow.getCell(colIndex);
-          Cell valueCell = dataRow.getCell(colIndex);
-          if (headerCell != null && headerCell.getCellType() != CellType.BLANK) {
-            String excelHeader =
-                formatter.formatCellValue(headerCell).replaceAll("[\\n*]", "").trim();
-            String cellValue = "";
-            if (valueCell != null && valueCell.getCellType() != CellType.BLANK) {
-              if (valueCell.getCellType() == CellType.NUMERIC
-                  && DateUtil.isCellDateFormatted(valueCell)) {
-                // Handle date format
-                Date date = valueCell.getDateCellValue();
-                SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_PATTERN);
-                cellValue = dateFormat.format(date);
-              } else {
-                cellValue = formatter.formatCellValue(valueCell).replace("\n", ",").trim();
-              }
-              allBlank = false;
-            }
-            rowData.put(excelHeader, cellValue);
-          }
-        }
-        if (allBlank) {
-          break; // If all cells are blank in the current row, stop processing
-        }
-        dataRows.add(rowData);
-      }
-      log.info("Number of Data Rows Processed: " + dataRows.size());
-      return dataRows;
-    } catch (Exception e) {
-      log.error(e.getMessage());
-      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  private List<Map<String, String>> processCsvAndSendMessage(InputStream inputStream) throws IOException {
-    log.info("DesignationServiceImpl::processCsvAndSendMessage");
-    List<Map<String, String>> dataRows = new ArrayList<>();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
-
-      List<String> headers = csvParser.getHeaderNames();
-
-      for (CSVRecord csvRecord : csvParser) {
-        boolean allBlank = true;
-        Map<String, String> rowData = new HashMap<>();
-        for (String header : headers) {
-          String cellValue = csvRecord.get(header);
-          if (cellValue != null && !cellValue.trim().isEmpty()) {
-            // Handle date format (assuming date is in a specific format)
-            if (isDate(cellValue)) {
-              SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_PATTERN);
-              cellValue = dateFormat.format(parseDate(cellValue));
-            } else {
-              cellValue = cellValue.replace("\n", ",").trim();
-            }
-            allBlank = false;
-          }
-          rowData.put(header, cellValue);
-        }
-        if (allBlank) {
-          break; // If all cells are blank in the current row, stop processing
-        }
-        dataRows.add(rowData);
-      }
-      log.info("Number of Data Rows Processed: " + dataRows.size());
-    } catch (Exception e) {
-      log.error(e.getMessage());
-      throw new CustomException(Constants.ERROR, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    return dataRows;
-  }
-
-  private boolean isDate(String value) {
-    try {
-      parseDate(value);
-      return true;
-    } catch (Exception e) {
-      return false;
-    }
-  }
-
-  private Date parseDate(String value) throws Exception {
-    // Customize this date parsing logic based on the expected date format in your CSV
-    SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_PATTERN);
-    return dateFormat.parse(value);
-  }
   public ApiResponse readTerm(String Id, String framework, String category) {
     ApiResponse response = new ApiResponse();
     try {
