@@ -884,7 +884,7 @@ class InterestServiceImplTest {
         searchCriteria.setSearchString("validSearch");
 
         when(valueOperations.get(anyString())).thenReturn(null);
-        when(esUtilService.searchDocuments(eq(Constants.INTEREST_INDEX_NAME), eq(searchCriteria)))
+        when(esUtilService.searchDocuments(Constants.INTEREST_INDEX_NAME, searchCriteria))
                 .thenThrow(new RuntimeException("es down"));
 
         CustomResponse response = interestService.searchDemand(searchCriteria);

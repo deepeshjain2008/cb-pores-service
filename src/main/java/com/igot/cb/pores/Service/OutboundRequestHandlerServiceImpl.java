@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -232,7 +233,7 @@ public class OutboundRequestHandlerServiceImpl {
 					});
 		} catch (Exception e1) {
 			// response body isn't valid JSON
-			return null;
+			return Collections.emptyMap();
 		}
 	}
 

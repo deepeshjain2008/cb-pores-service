@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -40,10 +39,10 @@ class ContentPartnerConsumerTest {
 
     @Test
     void consumePartnerDeactivate_missingPartnerId_logsAndReturns() throws Exception {
-        ConsumerRecord<String, String> record = new ConsumerRecord<>("topic", 0, 0, "key", "{}");
-        when(objectMapper.readValue(eq("{}"), eq(Map.class))).thenReturn(new HashMap<>());
+        ConsumerRecord<String, String> consumerRecord = new ConsumerRecord<>("topic", 0, 0, "key", "{}");
+        when(objectMapper.readValue("{}", Map.class)).thenReturn(new HashMap<>());
 
-        consumer.consumePartnerDeactivate(record);
+        consumer.consumePartnerDeactivate(consumerRecord);
 
         verifyNoInteractions(ciosContentService);
     }
@@ -51,26 +50,26 @@ class ContentPartnerConsumerTest {
     @Test
     void consumePartnerActivate_validPartnerId_updatesAllPartnerContents() throws Exception {
         String payload = "{\"partnerId\":\"p1\"}";
-        ConsumerRecord<String, String> record = new ConsumerRecord<>("topic", 0, 0, "key", payload);
+        ConsumerRecord<String, String> consumerRecord = new ConsumerRecord<>("topic", 0, 0, "key", payload);
         Map<String, Object> event = new HashMap<>();
         event.put(Constants.PARTNER_ID, "p1");
-        when(objectMapper.readValue(eq(payload), eq(Map.class))).thenReturn(event);
+        when(objectMapper.readValue(payload, Map.class)).thenReturn(event);
 
         // SearchResult with null data -> loop breaks on first page
         when(ciosContentService.searchCotent(any())).thenReturn(new SearchResult());
 
-        consumer.consumePartnerActivate(record);
+        consumer.consumePartnerActivate(consumerRecord);
 
         verify(ciosContentService).searchCotent(any());
     }
 
     @Test
     void handlePartnerEvent_exceptionDuringParsing_isSwallowed() throws Exception {
-        ConsumerRecord<String, String> record = new ConsumerRecord<>("topic", 0, 0, "key", "not-json");
-        when(objectMapper.readValue(eq("not-json"), eq(Map.class)))
+        ConsumerRecord<String, String> consumerRecord = new ConsumerRecord<>("topic", 0, 0, "key", "not-json");
+        when(objectMapper.readValue("not-json", Map.class))
                 .thenThrow(new RuntimeException("bad json"));
 
-        consumer.consumePartnerDeactivate(record);
+        consumer.consumePartnerDeactivate(consumerRecord);
 
         verifyNoInteractions(ciosContentService);
     }

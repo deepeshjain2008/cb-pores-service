@@ -31,7 +31,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
@@ -107,6 +106,61 @@ class DesignationServiceImpl2Test {
         designationService.loadDesignation(mockExcelFile, TOKEN);
 
         // If no exception, test passed
+    }
+
+    @Test
+    void testLoadDesignation_mixedBatch_coversAllFieldBranches() throws Exception {
+        when(designationRepository.count()).thenReturn(0L);
+        when(accessTokenValidator.verifyUserToken(TOKEN)).thenReturn("user-1");
+        when(esUtilService.isIndexPresent(Constants.DESIGNATION_INDEX_NAME)).thenReturn(true);
+
+        JsonNode mockEsData = new ObjectMapper().createArrayNode();
+        SearchResult searchResult = new SearchResult();
+        searchResult.setData(mockEsData);
+        when(esUtilService.searchDocuments(eq(Constants.DESIGNATION_INDEX_NAME), any())).thenReturn(searchResult);
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet();
+        Row header = sheet.createRow(0);
+        header.createCell(0).setCellValue("Designation");
+        Row data = sheet.createRow(1);
+        data.createCell(0).setCellValue("Developer");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+
+        MockMultipartFile mockExcelFile = new MockMultipartFile(
+                "file", "test.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                out.toByteArray()
+        );
+
+        ObjectMapper realMapper = new ObjectMapper();
+        // Build a batch exercising every branch of the per-item validation block:
+        // - a normal item with only "Designation" set
+        // - an item that also has "Updated Designations" set
+        // - an item missing the "Designation" field entirely
+        // - an item whose "Designation" value is explicitly null
+        // - a literal null element in the array
+        com.fasterxml.jackson.databind.node.ArrayNode batch = realMapper.createArrayNode();
+        batch.add(realMapper.createObjectNode().put("Designation", "Analyst"));
+        ObjectNode withUpdated = realMapper.createObjectNode();
+        withUpdated.put("Designation", "Engineer");
+        withUpdated.put("Updated Designations", "Senior Engineer");
+        batch.add(withUpdated);
+        batch.add(realMapper.createObjectNode().put("NotDesignation", "ignored"));
+        ObjectNode nullDesignation = realMapper.createObjectNode();
+        nullDesignation.putNull("Designation");
+        batch.add(nullDesignation);
+        batch.addNull();
+
+        ObjectNode emptyObjNode = realMapper.createObjectNode();
+        when(objectMapper.valueToTree(any())).thenReturn(batch);
+        when(objectMapper.createObjectNode()).thenReturn(emptyObjNode);
+
+        designationService.loadDesignation(mockExcelFile, TOKEN);
+
+        // If no exception, every branch combination above was processed safely
     }
 
     @Test

@@ -367,6 +367,46 @@ class CompetencyAreaServiceImplTest {
     }
 
     /**
+     * Test case for loadCompetencyArea with a mixed batch exercising every branch of the
+     * per-item validation: a normal item, a duplicate type, a missing type field, an empty
+     * type value, and a literal null element.
+     */
+    @Test
+    void test_loadCompetencyArea_mixedBatch_coversAllFieldBranches() {
+        MultipartFile file = new MockMultipartFile("file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", new byte[0]);
+        String token = "testToken";
+        String userId = "testUser";
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+        when(esUtilService.isIndexPresent(Constants.COMP_AREA_INDEX_NAME)).thenReturn(true);
+
+        ObjectMapper realMapper = new ObjectMapper();
+        SearchResult searchResult = new SearchResult();
+        searchResult.setData(realMapper.createArrayNode());
+        when(esUtilService.searchDocuments(eq(Constants.COMP_AREA_INDEX_NAME), any(SearchCriteria.class)))
+                .thenReturn(searchResult);
+
+        List<Map<String, String>> processedData = new ArrayList<>();
+        when(fileProcessService.processExcelFile(file)).thenReturn(processedData);
+
+        com.fasterxml.jackson.databind.node.ArrayNode batch = realMapper.createArrayNode();
+        batch.add(realMapper.createObjectNode().put(Constants.COMPETENCY_AREA_TYPE, "Area A"));
+        batch.add(realMapper.createObjectNode().put(Constants.COMPETENCY_AREA_TYPE, "Area A"));
+        batch.add(realMapper.createObjectNode().put("NotType", "ignored"));
+        batch.add(realMapper.createObjectNode().put(Constants.COMPETENCY_AREA_TYPE, ""));
+        batch.addNull();
+
+        when(objectMapper.valueToTree(processedData)).thenReturn(batch);
+        when(objectMapper.createObjectNode()).thenReturn(realMapper.createObjectNode());
+
+        competencyAreaService.loadCompetencyArea(file, token);
+
+        // Only the first item should pass every branch and get persisted.
+        verify(competencyAreaRepository, times(1)).saveAll(argThat(list ->
+                ((List<?>) list).size() == 1));
+    }
+
+    /**
      * Test case for loadCompetencyArea method when an exception occurs while fetching data from Elasticsearch.
      * This test verifies that the method throws a CustomException with the correct status code when there's an error in ES.
      */
@@ -507,7 +547,6 @@ class CompetencyAreaServiceImplTest {
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("a");
 
-        ValueOperations<String, SearchResult> valueOperations = Mockito.mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(any())).thenReturn(null);
 
@@ -525,7 +564,6 @@ class CompetencyAreaServiceImplTest {
         SearchCriteria searchCriteria = new SearchCriteria();
         searchCriteria.setSearchString("validSearchString");
 
-        ValueOperations<String, SearchResult> valueOperations = Mockito.mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(any())).thenReturn(null);
         when(esUtilService.searchDocuments(Constants.COMP_AREA_INDEX_NAME, searchCriteria))

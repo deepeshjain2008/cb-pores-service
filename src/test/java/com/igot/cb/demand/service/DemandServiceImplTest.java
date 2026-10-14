@@ -507,6 +507,24 @@ class DemandServiceImplTest {
     }
 
     /**
+     * Test case for incrementDemandCreateRateLimit when this is the first increment (val == 1).
+     * This test verifies that the TTL is set on the rate-limit key.
+     */
+    @Test
+    void test_incrementDemandCreateRateLimit_firstIncrement_setsExpiry() throws Exception {
+        when(valueOperationsString.increment(anyString(), anyLong())).thenReturn(1L);
+        when(cbServerProperties.getMaxDemandCreateByUserTtl()).thenReturn(3600);
+
+        java.lang.reflect.Method method = DemandServiceImpl.class
+                .getDeclaredMethod("incrementDemandCreateRateLimit", String.class);
+        method.setAccessible(true);
+
+        method.invoke(demandService, "rate-limit-key");
+
+        verify(redisTemplateString).expire("rate-limit-key", 3600, TimeUnit.SECONDS);
+    }
+
+    /**
      * Test case for generateUniqueDemandId when the total IDs are less than 10^7,
      * but the first generated ID already exists in the repository.
      * It should generate a new unique ID after the first attempt.
@@ -681,7 +699,7 @@ class DemandServiceImplTest {
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(null);
-        when(esUtilService.searchDocuments(eq(Constants.INDEX_NAME), eq(searchCriteria)))
+        when(esUtilService.searchDocuments(Constants.INDEX_NAME, searchCriteria))
                 .thenThrow(new RuntimeException("es down"));
 
         CustomResponse response = demandService.searchDemand(searchCriteria);
@@ -1082,6 +1100,34 @@ class DemandServiceImplTest {
     }
 
     @Test
+    void test_createDemand_savedDataIsNull_wrapsInErrorResponse() {
+        ObjectNode demandDetails = new ObjectMapper().createObjectNode();
+        demandDetails.put("title", "Upskilling for Teachers");
+        demandDetails.put("objective", "Train teachers on blended learning practices.");
+        demandDetails.put(Constants.REQUEST_TYPE, Constants.BROADCAST);
+
+        String token = "validToken";
+        String userId = "user123";
+        String rootOrgId = "org123";
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), any(), any(), anyInt()))
+                .thenReturn(List.of(Map.of(Constants.USER_ROOT_ORG_ID, rootOrgId, Constants.FIRST_NAME, "Test User")));
+
+        // Entity returned by save() has explicitly null data -> triggers the "no data found" branch
+        DemandEntity savedEntity = new DemandEntity();
+        savedEntity.setData(new ObjectMapper().nullNode());
+        savedEntity.setDemandId("testDemand123");
+        when(demandRepository.save(any())).thenReturn(savedEntity);
+
+        CustomResponse response = demandService.createDemand(demandDetails, token, rootOrgId);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
+        assertEquals("error while processing", response.getParams().getErrmsg());
+    }
+
+    @Test
     void test_createDemand_shouldReturn400_whenPayloadIsValid() {
         ObjectNode demandDetails = new ObjectMapper().createObjectNode();
         demandDetails.put("title", "Upskilling for Teachers");
@@ -1197,7 +1243,7 @@ class DemandServiceImplTest {
         Map<String, Object> readData = Map.of(
             Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, rolesList))
         );
-        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(finalUrl, header))
                 .thenReturn(readData);
 
         // Mock cassandra user validation

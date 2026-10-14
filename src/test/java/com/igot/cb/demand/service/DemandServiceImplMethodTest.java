@@ -347,7 +347,127 @@ class DemandServiceImplMethodTest {
         assertTrue(exception.getMessage().contains("Cannot invoke"));
     }
 
+    @Test
+    void testUpdateDemandStatus_inactiveDemand_throwsCustomException() {
+        String token = "valid-token";
+        String userId = "user123";
+        String rootOrgId = "org1";
 
+        ObjectNode updateDetails = realObjectMapper.createObjectNode();
+        updateDetails.put(Constants.DEMAND_ID, "demand123");
+        updateDetails.put(Constants.NEW_STATUS, "Open");
+
+        DemandEntity demandEntity = new DemandEntity();
+        ObjectNode data = realObjectMapper.createObjectNode();
+        data.put(Constants.STATUS, "Draft");
+        data.put(Constants.REQUEST_TYPE, "type1");
+        data.put(Constants.IS_ACTIVE, false);
+        demandEntity.setData(data);
+        demandEntity.setDemandId("demand123");
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), any(), any(), anyInt()))
+                .thenReturn(Collections.singletonList(Map.of(Constants.USER_ROOT_ORG_ID, rootOrgId, Constants.FIRST_NAME, "Test")));
+        when(demandRepository.findById("demand123")).thenReturn(Optional.of(demandEntity));
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> demandService.updateDemandStatus(updateDetails, token, rootOrgId));
+
+        assertEquals(Constants.CANNOT_UPDATE_INACTIVE_DEMAND, exception.getMessage());
+    }
+
+    @Test
+    void testUpdateDemandStatus_invalidStatusTransition_throwsCustomException() {
+        String token = "valid-token";
+        String userId = "user123";
+        String rootOrgId = "org1";
+
+        ObjectNode updateDetails = realObjectMapper.createObjectNode();
+        updateDetails.put(Constants.DEMAND_ID, "demand123");
+        updateDetails.put(Constants.NEW_STATUS, "Open");
+
+        DemandEntity demandEntity = new DemandEntity();
+        ObjectNode data = realObjectMapper.createObjectNode();
+        data.put(Constants.STATUS, "Draft");
+        data.put(Constants.REQUEST_TYPE, "type1");
+        data.put(Constants.IS_ACTIVE, true);
+        demandEntity.setData(data);
+        demandEntity.setDemandId("demand123");
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), any(), any(), anyInt()))
+                .thenReturn(Collections.singletonList(Map.of(Constants.USER_ROOT_ORG_ID, rootOrgId, Constants.FIRST_NAME, "Test")));
+        when(demandRepository.findById("demand123")).thenReturn(Optional.of(demandEntity));
+
+        ReflectionTestUtils.setField(demandService, "statusTransitionConfig", statusTransitionConfig);
+        when(statusTransitionConfig.isValidTransition(anyString(), anyString(), anyString()))
+                .thenReturn(false);
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> demandService.updateDemandStatus(updateDetails, token, rootOrgId));
+
+        assertEquals(Constants.INVALID_STATUS_TRANSITION, exception.getMessage());
+    }
+
+    @Test
+    void testUpdateDemandStatus_savedDataIsNull_throwsCustomException() {
+        String token = "valid-token";
+        String userId = "user123";
+        String rootOrgId = "org1";
+
+        ObjectNode updateDetails = realObjectMapper.createObjectNode();
+        updateDetails.put(Constants.DEMAND_ID, "demand123");
+        updateDetails.put(Constants.NEW_STATUS, "Open");
+
+        DemandEntity demandEntity = new DemandEntity();
+        ObjectNode data = realObjectMapper.createObjectNode();
+        data.put(Constants.STATUS, "Draft");
+        data.put(Constants.REQUEST_TYPE, "type1");
+        data.put(Constants.IS_ACTIVE, true);
+        demandEntity.setData(data);
+        demandEntity.setDemandId("demand123");
+
+        // The entity returned by save() has null data, triggering the "no data found" branch
+        DemandEntity savedEntity = new DemandEntity();
+        savedEntity.setData(realObjectMapper.nullNode());
+        savedEntity.setDemandId("demand123");
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), any(), any(), anyInt()))
+                .thenReturn(Collections.singletonList(Map.of(Constants.USER_ROOT_ORG_ID, rootOrgId, Constants.FIRST_NAME, "Test")));
+        when(demandRepository.findById("demand123")).thenReturn(Optional.of(demandEntity));
+        when(demandRepository.save(any())).thenReturn(savedEntity);
+
+        ReflectionTestUtils.setField(demandService, "statusTransitionConfig", statusTransitionConfig);
+        when(statusTransitionConfig.isValidTransition(anyString(), anyString(), anyString()))
+                .thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> demandService.updateDemandStatus(updateDetails, token, rootOrgId));
+
+        assertEquals(Constants.INVALID_DATA, exception.getMessage());
+    }
+
+    @Test
+    void testUpdateDemandStatus_demandNotFound_throwsCustomException() {
+        String token = "valid-token";
+        String userId = "user123";
+        String rootOrgId = "org1";
+
+        ObjectNode updateDetails = realObjectMapper.createObjectNode();
+        updateDetails.put(Constants.DEMAND_ID, "missing-demand");
+        updateDetails.put(Constants.NEW_STATUS, "Open");
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), any(), any(), anyInt()))
+                .thenReturn(Collections.singletonList(Map.of(Constants.USER_ROOT_ORG_ID, rootOrgId, Constants.FIRST_NAME, "Test")));
+        when(demandRepository.findById("missing-demand")).thenReturn(Optional.empty());
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> demandService.updateDemandStatus(updateDetails, token, rootOrgId));
+
+        assertEquals(Constants.INVALID_ID, exception.getMessage());
+    }
 
     @Test
     void testUpdateDemandStatusMissingUserId() {
@@ -402,6 +522,14 @@ class DemandServiceImplMethodTest {
         when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), any())).thenReturn(
                 Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of("otherRole")))));
         boolean result = demandService.isSpvRequest("user123", Constants.SPV_ADMIN);
+        assertFalse(result);
+    }
+
+    @Test
+    void testIsSpvRequest_nullRequiredRole_returnsFalseWithoutCheckingRoles() {
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), any())).thenReturn(
+                Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of(Constants.SPV_ADMIN)))));
+        boolean result = demandService.isSpvRequest("user123", null);
         assertFalse(result);
     }
 
