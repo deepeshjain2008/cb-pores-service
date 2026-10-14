@@ -21,7 +21,7 @@ import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
+import com.igot.cb.pores.Service.OutboundRequestHandlerServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,7 +84,7 @@ class DemandServiceImplTest {
     private RedisTemplate<String, String> redisTemplateString;
 
     @Mock
-    private RequestHandlerServiceImpl requestHandlerService;
+    private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
     @Mock
     private StatusTransitionConfig statusTransitionConfig;
@@ -110,7 +110,7 @@ class DemandServiceImplTest {
         ReflectionTestUtils.setField(demandService, "accessTokenValidator", accessTokenValidator);
         ReflectionTestUtils.setField(demandService, "cassandraOperation", cassandraOperation);
         ReflectionTestUtils.setField(demandService, "kafkaProducer", kafkaProducer);
-        ReflectionTestUtils.setField(demandService, "requestHandlerService", requestHandlerService);
+        ReflectionTestUtils.setField(demandService, "outboundRequestHandlerServiceImpl", outboundRequestHandlerServiceImpl);
         ReflectionTestUtils.setField(demandService, "cbServerProperties", cbServerProperties);
         ReflectionTestUtils.setField(demandService, "propertiesConfig", cbServerProperties);
         ReflectionTestUtils.setField(demandService, "esUtilService", esUtilService);
@@ -139,6 +139,26 @@ class DemandServiceImplTest {
         assertNotNull(demandService, "DemandServiceImpl should be created successfully");
         // We can't directly access private fields, so we can't check statusTransitionConfig
         // However, we can verify that no exception is thrown during initialization
+    }
+
+    @Test
+    void test_DemandServiceImpl_realConstructor_initializesAllFields() throws Exception {
+        DemandServiceImpl service = new DemandServiceImpl(
+                esUtilService,
+                demandRepository,
+                cacheService,
+                objectMapper,
+                redisTemplate,
+                redisTemplateString,
+                accessTokenValidator,
+                cbServerProperties,
+                cassandraOperation,
+                kafkaProducer,
+                cbServerProperties,
+                outboundRequestHandlerServiceImpl,
+                new PayloadValidation());
+
+        assertNotNull(service);
     }
 
     /**
@@ -457,6 +477,36 @@ class DemandServiceImplTest {
     }
 
     /**
+     * Test case for generateUniqueDemandId when every generated id already exists,
+     * exhausting all retry attempts. It should throw a CustomException.
+     */
+    @Test
+    void test_generateUniqueDemandId_attemptsExhausted_throwsCustomException() {
+        when(demandRepository.existsById(anyString())).thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class,
+                demandService::generateUniqueDemandId);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatusCode());
+    }
+
+    /**
+     * Test case for incrementDemandCreateRateLimit when redis throws an exception.
+     * This test verifies that the failure is logged and swallowed, not propagated.
+     */
+    @Test
+    void test_incrementDemandCreateRateLimit_redisThrows_isSwallowed() throws Exception {
+        when(valueOperationsString.increment(anyString(), anyLong()))
+                .thenThrow(new RuntimeException("redis down"));
+
+        java.lang.reflect.Method method = DemandServiceImpl.class
+                .getDeclaredMethod("incrementDemandCreateRateLimit", String.class);
+        method.setAccessible(true);
+
+        assertDoesNotThrow(() -> method.invoke(demandService, "rate-limit-key"));
+    }
+
+    /**
      * Test case for generateUniqueDemandId when the total IDs are less than 10^7,
      * but the first generated ID already exists in the repository.
      * It should generate a new unique ID after the first attempt.
@@ -611,12 +661,32 @@ class DemandServiceImplTest {
     @Test
     void test_searchDemand_shortSearchString() {
         SearchCriteria searchCriteria = new SearchCriteria();
-        searchCriteria.setSearchString("ab");
+        searchCriteria.setSearchString("a");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
         CustomResponse response = demandService.searchDemand(searchCriteria);
 
-        assertEquals(HttpStatus.OK, response.getResponseCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
+    }
+
+    /**
+     * Test case for searchDemand method when esUtilService throws an exception.
+     * This test verifies that the method returns an INTERNAL_SERVER_ERROR response.
+     */
+    @Test
+    void test_searchDemand_esUtilServiceThrows_returnsInternalServerError() {
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setSearchString("validSearch");
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(esUtilService.searchDocuments(eq(Constants.INDEX_NAME), eq(searchCriteria)))
+                .thenThrow(new RuntimeException("es down"));
+
+        CustomResponse response = demandService.searchDemand(searchCriteria);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
     }
 
     /**
@@ -773,7 +843,7 @@ class DemandServiceImplTest {
         // Build response map structure
         Map<String, Object> responseMap = Map.of(Constants.RESPONSE_CODE, Constants.OK, Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.CONTENT, List.of(Map.of(Constants.ROOT_ORG_ID, "org-123")))));
 
-        when(requestHandlerService.fetchResultUsingPost(eq("http://fake-url/search"), anyMap(), anyMap())).thenReturn(responseMap);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(eq("http://fake-url/search"), anyMap(), anyMap())).thenReturn(responseMap);
 
         // Use reflection to invoke private method
         List<String> result = (List<String>) ReflectionTestUtils.invokeMethod(demandService, "fetchingUserId", inputUserIds);
@@ -790,7 +860,7 @@ class DemandServiceImplTest {
         when(cbServerProperties.getLearnerServiceUrl()).thenReturn("url");
         when(cbServerProperties.getOrgSearchPath()).thenReturn("path");
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(null); // simulate failure
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(null); // simulate failure
 
         List<String> result = (List<String>) ReflectionTestUtils.invokeMethod(demandService, "fetchingUserId", inputUserIds);
 
@@ -808,7 +878,7 @@ class DemandServiceImplTest {
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put(Constants.RESPONSE_CODE, "ERROR");
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(responseMap);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(responseMap);
 
         List<String> result = (List<String>) ReflectionTestUtils.invokeMethod(demandService, "fetchingUserId", inputUserIds);
 
@@ -840,7 +910,7 @@ class DemandServiceImplTest {
         Map<String, Object> outerResult = Map.of(Constants.RESPONSE, result);
         Map<String, Object> responseMap = Map.of(Constants.RESPONSE_CODE, Constants.OK, Constants.RESULT, outerResult);
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(responseMap);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(responseMap);
 
         // Call private method
         boolean isValid = (Boolean) ReflectionTestUtils.invokeMethod(demandService, "handleProviderValidation", demandDetails, response);
@@ -871,7 +941,7 @@ class DemandServiceImplTest {
         Map<String, Object> outer = Map.of(Constants.RESPONSE, emptyResult);
         Map<String, Object> resultMap = Map.of(Constants.RESPONSE_CODE, Constants.OK, Constants.RESULT, outer);
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(resultMap);
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(resultMap);
 
         // Invoke private method
         boolean result = (Boolean) ReflectionTestUtils.invokeMethod(demandService, "handleProviderValidation", demandDetails, response);
@@ -899,7 +969,7 @@ class DemandServiceImplTest {
         when(cbServerProperties.getLearnerServiceUrl()).thenReturn("url");
         when(cbServerProperties.getOrgSearchPath()).thenReturn("path");
 
-        when(requestHandlerService.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(null); // simulate failure
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap())).thenReturn(null); // simulate failure
 
         boolean result = (Boolean) ReflectionTestUtils.invokeMethod(demandService, "handleProviderValidation", demandDetails, response);
 
@@ -1127,7 +1197,7 @@ class DemandServiceImplTest {
         Map<String, Object> readData = Map.of(
             Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, rolesList))
         );
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(finalUrl), eq(header)))
                 .thenReturn(readData);
 
         // Mock cassandra user validation

@@ -209,6 +209,46 @@ class CassandraOperationImplTest {
     }
 
     @Test
+    void updateRecord_Success_userTable_logsInfo() {
+        String keyspaceName = "testKeyspace";
+        String tableName = Constants.USER;
+
+        Map<String, Object> request = new HashMap<>();
+        request.put(Constants.ID, "123");
+        request.put("name", "Updated Name");
+
+        PreparedStatement mockPreparedStatement = mock(PreparedStatement.class);
+        BoundStatement mockBoundStatement = mock(BoundStatement.class);
+
+        when(connectionManager.getSession(keyspaceName)).thenReturn(mockSession);
+        when(mockSession.prepare(anyString())).thenReturn(mockPreparedStatement);
+        when(mockPreparedStatement.bind(any(Object[].class))).thenReturn(mockBoundStatement);
+        when(mockSession.execute(mockBoundStatement)).thenReturn(mockResultSet);
+
+        Map<String, Object> response = cassandraOperation.updateRecord(keyspaceName, tableName, request);
+
+        assertEquals(Constants.SUCCESS, response.get(Constants.RESPONSE));
+    }
+
+    @Test
+    void updateRecord_unknownIdentifierException_setsFailedResponse() {
+        String keyspaceName = "testKeyspace";
+        String tableName = "testTable";
+
+        Map<String, Object> request = new HashMap<>();
+        request.put(Constants.ID, "123");
+        request.put("name", "Updated Name");
+
+        when(connectionManager.getSession(keyspaceName))
+                .thenThrow(new RuntimeException(Constants.UNKNOWN_IDENTIFIER + "name"));
+
+        Map<String, Object> response = cassandraOperation.updateRecord(keyspaceName, tableName, request);
+
+        assertEquals(Constants.FAILED, response.get(Constants.RESPONSE));
+        assertNotNull(response.get(Constants.ERROR_MESSAGE));
+    }
+
+    @Test
     void testGetRecordsByPropertiesByKey_success() {
         // Input
         String keyspaceName = "test_keyspace";

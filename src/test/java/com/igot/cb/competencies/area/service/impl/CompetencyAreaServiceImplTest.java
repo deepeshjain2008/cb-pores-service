@@ -499,6 +499,44 @@ class CompetencyAreaServiceImplTest {
     }
 
     /**
+     * Test case for searchCompArea method when the search string is shorter than 2 characters.
+     * This test verifies that the method returns a BAD_REQUEST response without querying Elasticsearch.
+     */
+    @Test
+    void test_searchCompArea_shortSearchString() {
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setSearchString("a");
+
+        ValueOperations<String, SearchResult> valueOperations = Mockito.mock(ValueOperations.class);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn(null);
+
+        CustomResponse response = competencyAreaService.searchCompArea(searchCriteria);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
+    }
+
+    /**
+     * Test case for searchCompArea method when esUtilService throws an exception.
+     * This test verifies that the method returns an INTERNAL_SERVER_ERROR response.
+     */
+    @Test
+    void test_searchCompArea_esUtilServiceThrows_returnsInternalServerError() {
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setSearchString("validSearchString");
+
+        ValueOperations<String, SearchResult> valueOperations = Mockito.mock(ValueOperations.class);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(any())).thenReturn(null);
+        when(esUtilService.searchDocuments(Constants.COMP_AREA_INDEX_NAME, searchCriteria))
+                .thenThrow(new RuntimeException("es down"));
+
+        CustomResponse response = competencyAreaService.searchCompArea(searchCriteria);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
+    }
+
+    /**
      * Test case for searchCompArea method when search result is found in Redis cache.
      * This test verifies that when a cached search result is available in Redis,
      * the method returns it without querying Elasticsearch.

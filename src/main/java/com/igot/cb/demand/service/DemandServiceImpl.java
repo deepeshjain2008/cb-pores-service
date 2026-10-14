@@ -25,7 +25,7 @@ import com.igot.cb.pores.util.Constants;
 import com.igot.cb.pores.util.PayloadValidation;
 import com.igot.cb.producer.Producer;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
+import com.igot.cb.pores.Service.OutboundRequestHandlerServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -69,7 +69,7 @@ public class DemandServiceImpl implements DemandService {
 
     private final CbServerProperties propertiesConfig;
 
-    private final RequestHandlerServiceImpl requestHandlerService;
+    private final OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
     private final PayloadValidation payloadValidation;
 
@@ -87,7 +87,7 @@ public class DemandServiceImpl implements DemandService {
                               CassandraOperation cassandraOperation,
                               Producer kafkaProducer,
                               CbServerProperties propertiesConfig,
-                              RequestHandlerServiceImpl requestHandlerService,
+                              OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl,
                               PayloadValidation payloadValidation) throws IOException {
         this.esUtilService = esUtilService;
         this.demandRepository = demandRepository;
@@ -101,7 +101,7 @@ public class DemandServiceImpl implements DemandService {
         this.kafkaProducer = kafkaProducer;
         this.payloadValidation = payloadValidation;
         this.propertiesConfig = propertiesConfig;
-        this.requestHandlerService = requestHandlerService;
+        this.outboundRequestHandlerServiceImpl = outboundRequestHandlerServiceImpl;
         this.statusTransitionConfig = new StatusTransitionConfig(Constants.STATUS_TRANSITION_PATH);
     }
 
@@ -592,7 +592,7 @@ public class DemandServiceImpl implements DemandService {
     @Override
     public boolean isSpvRequest(String userId,String requiredRole) {
         Map<String, String> header = new HashMap<>();
-        Map<String, Object> readData = (Map<String, Object>) requestHandlerService
+        Map<String, Object> readData = (Map<String, Object>) outboundRequestHandlerServiceImpl
                 .fetchUsingGetWithHeadersProfile(propertiesConfig.getSbUrl() + propertiesConfig.getUserReadEndPoint() + userId,
                         header);
         Map<String, Object> result = (Map<String, Object>) readData.get(Constants.RESULT);
@@ -682,7 +682,7 @@ public class DemandServiceImpl implements DemandService {
         headersValue.put(Constants.AUTHORIZATION, cbServerProperties.getSbApiKey());
 
         String url = cbServerProperties.getLearnerServiceUrl() + cbServerProperties.getOrgSearchPath();
-        Map<String, Object> searchProfileApiResp = requestHandlerService.fetchResultUsingPost(url, requestObject, headersValue);
+        Map<String, Object> searchProfileApiResp = outboundRequestHandlerServiceImpl.fetchResultUsingPost(url, requestObject, headersValue);
         List<String> userIdResponseList = new ArrayList<>();
         if (searchProfileApiResp != null
                 && Constants.OK.equalsIgnoreCase((String) searchProfileApiResp.get(Constants.RESPONSE_CODE))) {

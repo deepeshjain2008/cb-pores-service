@@ -7,7 +7,6 @@ import com.igot.cb.pores.util.ApiResponse;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -46,11 +45,8 @@ class OrgServiceImplTest {
     @InjectMocks
     private OrgServiceImpl orgService;
 
-    @Mock
-    private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
-
     @Mock(lenient = true)
-    private RequestHandlerServiceImpl requestHandlerService;
+    private OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
 
     private final String frameworkId = "test-framework-id";
@@ -269,7 +265,7 @@ class OrgServiceImplTest {
         Map<String, Object> readData = new HashMap<>();
         readData.put(Constants.RESULT, result);
 
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
             .thenReturn(readData);
 
         // Act
@@ -277,7 +273,7 @@ class OrgServiceImplTest {
 
         // Assert
         assertTrue(isSpv);
-        verify(requestHandlerService).fetchUsingGetWithHeadersProfile(
+        verify(outboundRequestHandlerServiceImpl).fetchUsingGetWithHeadersProfile(
             eq("http://test.com/user/testUser"),
             anyMap()
         );
@@ -304,7 +300,7 @@ class OrgServiceImplTest {
         Map<String, Object> readData = new HashMap<>();
         readData.put(Constants.RESULT, result);
 
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
             .thenReturn(readData);
 
         boolean isSpvRequest = orgService.isSpvRequest(userId, requiredRoles);
@@ -334,7 +330,7 @@ class OrgServiceImplTest {
         Map<String, Object> readData = new HashMap<>();
         readData.put("result", result);
 
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap())).thenReturn(readData);
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap())).thenReturn(readData);
 
         // Act
         boolean isSpvRequest = orgService.isSpvRequest(userId, requiredRoles);
@@ -364,7 +360,7 @@ class OrgServiceImplTest {
         Map<String, Object> readData = new HashMap<>();
         readData.put("result", result);
 
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile("http://test.com/user/testUser", new HashMap<>()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile("http://test.com/user/testUser", new HashMap<>()))
                 .thenReturn(readData);
 
         boolean isSpvRequest = orgService.isSpvRequest(userId, requiredRoles);
@@ -521,7 +517,7 @@ class OrgServiceImplTest {
         mockReadData.put(Constants.RESULT, mockResultMap);
 
         // Mocking method
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
                 .thenReturn(mockReadData);
 
         when(accessTokenValidator.verifyUserToken(userAuthToken)).thenReturn(userId);
@@ -570,7 +566,7 @@ class OrgServiceImplTest {
         mockReadData.put(Constants.RESULT, mockResultMap);
 
         // Mocking method
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
                 .thenReturn(mockReadData);
 
         when(accessTokenValidator.verifyUserToken(userAuthToken)).thenReturn(userId);
@@ -619,7 +615,7 @@ class OrgServiceImplTest {
         mockReadData.put(Constants.RESULT, mockResultMap);
 
         // Mocking method
-        lenient().when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
+        lenient().when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
                 .thenReturn(mockReadData);
 
         when(accessTokenValidator.verifyUserToken(userAuthToken)).thenReturn(userId);
@@ -668,7 +664,7 @@ class OrgServiceImplTest {
         mockReadData.put(Constants.RESULT, mockResultMap);
 
         // Mocking method
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
                 .thenReturn(mockReadData);
 
         when(accessTokenValidator.verifyUserToken(userAuthToken)).thenReturn(userId);
@@ -709,7 +705,7 @@ class OrgServiceImplTest {
         mockReadData.put(Constants.RESULT, mockResultMap);
 
         // Mocking method
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
                 .thenReturn(mockReadData);
 
         when(accessTokenValidator.verifyUserToken(userAuthToken)).thenReturn(userId);
@@ -908,7 +904,7 @@ class OrgServiceImplTest {
                         )
                 )
         );
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
                 .thenReturn(mockUserData);
 
         // 3. Mock org details from Cassandra
@@ -976,7 +972,7 @@ class OrgServiceImplTest {
 
         when(cbServerProperties.getOrgHierarchyCreateRequiredRoles()).thenReturn(List.of("SPV_ADMIN"));
         when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
                 .thenReturn(Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of("SPV_ADMIN")))));
         when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), anyMap(), any(), anyInt()))
                 .thenReturn(List.of(new HashMap<>()));
@@ -1016,7 +1012,7 @@ class OrgServiceImplTest {
     @Test
     void testCreateOrgHierarchyFramework_InsufficientRoles() {
         when(accessTokenValidator.verifyUserToken("token")).thenReturn("userId");
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
                 .thenReturn(Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of("USER")))));
 
         ApiResponse response = orgService.createOrgHierarchyFramework("master", "org", "token");
@@ -1029,7 +1025,7 @@ class OrgServiceImplTest {
     void testCreateOrgHierarchyFramework_OrgNotFound() {
         when(cbServerProperties.getOrgHierarchyCreateRequiredRoles()).thenReturn(Arrays.asList("SPV_ADMIN"));
         when(accessTokenValidator.verifyUserToken("token")).thenReturn("userId");
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
                 .thenReturn(Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of("SPV_ADMIN")))));
         when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), anyMap(), any(), anyInt()))
                 .thenReturn(Collections.emptyList());
@@ -1048,7 +1044,7 @@ class OrgServiceImplTest {
         );
         when(cbServerProperties.getOrgHierarchyCreateRequiredRoles()).thenReturn(List.of("SPV_ADMIN"));
         when(accessTokenValidator.verifyUserToken("token")).thenReturn("userId");
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap()))
                 .thenReturn(Map.of(Constants.RESULT, Map.of(Constants.RESPONSE, Map.of(Constants.ROLES, List.of("SPV_ADMIN")))));
         when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), anyMap(), any(), anyInt()))
                 .thenReturn(List.of(orgDetail));
@@ -1101,7 +1097,7 @@ class OrgServiceImplTest {
         responseUserMap.put(Constants.RESPONSE, userProfile);
         Map<String, Object> resultUserMap = new HashMap<>();
         resultUserMap.put(Constants.RESULT, responseUserMap);
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap())).thenReturn(resultUserMap);
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap())).thenReturn(resultUserMap);
 
         when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(any(), any(), any(), any(), anyInt()))
                 .thenReturn(List.of(orgRecord));
@@ -1177,7 +1173,7 @@ class OrgServiceImplTest {
         resultMap.put(Constants.RESPONSE, responseMap);
         Map<String, Object> readData = new HashMap<>();
         readData.put(Constants.RESULT, resultMap);
-        when(requestHandlerService.fetchUsingGetWithHeadersProfile(anyString(), anyMap())).thenReturn(readData);
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(anyString(), anyMap())).thenReturn(readData);
 
         // Mock org details - framework not set or FAILED
         Map<String, Object> orgDetail = new HashMap<>();

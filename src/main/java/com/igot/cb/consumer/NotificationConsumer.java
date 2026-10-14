@@ -2,13 +2,13 @@ package com.igot.cb.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.igot.cb.demand.service.DemandServiceImpl;
+import com.igot.cb.pores.Service.OutboundRequestHandlerServiceImpl;
 import com.igot.cb.pores.util.CbServerProperties;
 import com.igot.cb.pores.util.Constants;
 import com.igot.cb.transactional.cassandrautils.CassandraOperation;
 import com.igot.cb.transactional.model.Config;
 import com.igot.cb.transactional.model.NotificationAsyncRequest;
 import com.igot.cb.transactional.model.Template;
-import com.igot.cb.transactional.service.RequestHandlerServiceImpl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.velocity.VelocityContext;
@@ -34,7 +34,7 @@ public class NotificationConsumer {
 
     private Logger logger = LoggerFactory.getLogger(DemandServiceImpl.class);
 
-    private final RequestHandlerServiceImpl requestHandlerService;
+    private final OutboundRequestHandlerServiceImpl outboundRequestHandlerServiceImpl;
 
     private final CassandraOperation cassandraOperation;
 
@@ -355,7 +355,7 @@ public class NotificationConsumer {
         builder.append(configuration.getNotifyServiceHost()).append(urlPath);
         try {
             logger.info(mapper.writeValueAsString(request));
-            Map<String, Object> response = requestHandlerService.fetchResultUsingPost(builder.toString(), request, null);
+            Map<String, Object> response = outboundRequestHandlerServiceImpl.fetchResultUsingPost(builder.toString(), request, null);
             logger.debug("The email notification is successfully sent, response is: {}", response);
         } catch (Exception e) {
             logger.error("Exception while posting the data in notification service: ", e);
@@ -381,7 +381,7 @@ public class NotificationConsumer {
         List<String> providerIdEmails = new ArrayList<>();
         StringBuilder url = new StringBuilder(configuration.getSbUrl())
                 .append(configuration.getUserSearchEndPoint());
-        Map<String, Object> searchProfileApiResp = requestHandlerService.fetchResultUsingPost(url.toString(), request,
+        Map<String, Object> searchProfileApiResp = outboundRequestHandlerServiceImpl.fetchResultUsingPost(url.toString(), request,
                 headersValue);
         if (searchProfileApiResp != null
                 && "OK".equalsIgnoreCase((String) searchProfileApiResp.get(Constants.RESPONSE_CODE))) {
@@ -424,7 +424,7 @@ public class NotificationConsumer {
         HashMap<String, String> headersValue = new HashMap<>();
         headersValue.put(Constants.CONTENT_TYPE, Constants.APPLICATION_JSON);
         StringBuilder url = new StringBuilder(configuration.getSbUrl()).append(configuration.getUserSearchEndPoint());
-        Map<String, Object> searchProfileApiResp = requestHandlerService.fetchResultUsingPost(url.toString(), requestObject, headersValue);
+        Map<String, Object> searchProfileApiResp = outboundRequestHandlerServiceImpl.fetchResultUsingPost(url.toString(), requestObject, headersValue);
         List<String> emailResponseList = new ArrayList<>();
         if (searchProfileApiResp != null
                 && Constants.OK.equalsIgnoreCase((String) searchProfileApiResp.get(Constants.RESPONSE_CODE))) {

@@ -437,6 +437,51 @@ class PlayListServiceImplTest {
         assertEquals(HttpStatus.NOT_FOUND, response.getResponseCode());
     }
 
+    @Test
+    void test_readPlaylist_cacheEmpty_fetchFromPostgresAndRecache() throws Exception {
+        String orgId = "org123";
+        String requestType = "course";
+        String id = orgId + requestType;
+
+        when(redisCacheMngr.hget(id, orgId))
+                .thenReturn(Collections.singletonList(null))
+                .thenReturn(Collections.singletonList("[{\"name\":\"playlist1\"}]"));
+
+        PlayListEntity playListEntity = new PlayListEntity();
+        playListEntity.setOrgId(orgId);
+        ObjectNode dataNode = mock(ObjectNode.class);
+        when(dataNode.get(Constants.CHILDREN)).thenReturn(mock(JsonNode.class));
+        playListEntity.setData(dataNode);
+
+        when(playListRepository.findByOrgIdAndRequestTypeAndIsActive(orgId, requestType, true))
+                .thenReturn(List.of(playListEntity));
+
+        ObjectNode enrichedContentJson = mock(ObjectNode.class);
+        when(objectMapper.createObjectNode()).thenReturn(enrichedContentJson);
+        when(objectMapper.convertValue(eq(enrichedContentJson), any(TypeReference.class)))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        JsonNode rootNode = mock(JsonNode.class);
+        JsonNode firstElement = mock(JsonNode.class);
+        JsonNode childrenNode = mock(JsonNode.class);
+        when(objectMapper.readTree(anyString())).thenReturn(rootNode, childrenNode);
+        when(rootNode.get(0)).thenReturn(firstElement);
+        JsonNode childrenTextNode = mock(JsonNode.class);
+        when(firstElement.get(Constants.CHILDREN)).thenReturn(childrenTextNode);
+        when(childrenTextNode.asText()).thenReturn("{}");
+        when(childrenNode.fields()).thenReturn(Collections.emptyIterator());
+        when(childrenNode.has(Constants.RESULT)).thenReturn(false);
+
+        // Act
+        ApiResponse response = playListService.readPlaylist(id, orgId);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getResponseCode());
+        verify(redisCacheMngr, times(2)).hget(id, orgId);
+    }
+
 
     /**
      * Test case for readPlaylist method when playlist is not found in Redis or database.
@@ -488,11 +533,103 @@ class PlayListServiceImplTest {
      */
     @Test
     void test_readV2Playlist_playlistNotFound() {
-        
+
         ApiResponse response = playListService.readV2Playlist("nonexistentId", "nonexistentPlayListId", "nonexistentOrgId");
 
         assertEquals(HttpStatus.NOT_FOUND, response.getResponseCode());
         assertEquals(Constants.FAILED, response.getParams().getStatus());
+    }
+
+    @Test
+    void test_readV2Playlist_cacheEmpty_fetchFromPostgresAndRecache() throws Exception {
+        String id = "id1";
+        String orgId = "org123";
+        String playListId = "pl-1";
+
+        when(redisCacheMngr.hget(id, orgId))
+                .thenReturn(Collections.singletonList(null))
+                .thenReturn(Collections.singletonList("[{\"name\":\"playlist1\"}]"));
+
+        PlayListEntity playListEntity = new PlayListEntity();
+        playListEntity.setOrgId(orgId);
+        ObjectNode dataNode = mock(ObjectNode.class);
+        when(dataNode.get(Constants.CHILDREN)).thenReturn(mock(JsonNode.class));
+        playListEntity.setData(dataNode);
+
+        when(playListRepository.findByIdAndIsActive(playListId, true)).thenReturn(playListEntity);
+
+        ObjectNode enrichedContentJson = mock(ObjectNode.class);
+        when(objectMapper.createObjectNode()).thenReturn(enrichedContentJson);
+        when(objectMapper.convertValue(eq(enrichedContentJson), any(TypeReference.class)))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        JsonNode rootNode = mock(JsonNode.class);
+        JsonNode firstElement = mock(JsonNode.class);
+        JsonNode childrenNode = mock(JsonNode.class);
+        when(objectMapper.readTree(anyString())).thenReturn(rootNode, childrenNode);
+        when(rootNode.get(0)).thenReturn(firstElement);
+        JsonNode childrenTextNode = mock(JsonNode.class);
+        when(firstElement.get(Constants.CHILDREN)).thenReturn(childrenTextNode);
+        when(childrenTextNode.asText()).thenReturn("{}");
+        when(childrenNode.fields()).thenReturn(Collections.emptyIterator());
+        when(childrenNode.has(Constants.RESULT)).thenReturn(false);
+
+        ApiResponse response = playListService.readV2Playlist(id, playListId, orgId);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getResponseCode());
+        verify(redisCacheMngr, times(2)).hget(id, orgId);
+    }
+
+    @Test
+    void test_searchPlayListForOrg_cacheEmpty_fetchFromPostgresAndRecache() throws Exception {
+        String orgId = "org123";
+        String contextType = "course";
+
+        HashMap<String, Object> filters = new HashMap<>();
+        filters.put(Constants.ORGANISATION, orgId);
+        filters.put(Constants.REQUEST_TYPE, List.of(contextType));
+        HashMap<String, Object> request = new HashMap<>();
+        request.put(Constants.FILTERS, filters);
+        SearchDto searchDto = new SearchDto();
+        searchDto.setRequest(request);
+
+        when(redisCacheMngr.hget(orgId + contextType, orgId))
+                .thenReturn(Collections.singletonList(null))
+                .thenReturn(Collections.singletonList("[{\"name\":\"playlist1\"}]"));
+
+        PlayListEntity playListEntity = new PlayListEntity();
+        playListEntity.setOrgId(orgId);
+        playListEntity.setRequestType(contextType);
+        ObjectNode dataNode = mock(ObjectNode.class);
+        when(dataNode.get(Constants.CHILDREN)).thenReturn(mock(JsonNode.class));
+        playListEntity.setData(dataNode);
+
+        when(playListRepository.findByOrgIdAndIsActive(orgId, true)).thenReturn(playListEntity);
+
+        ObjectNode enrichedContentJson = mock(ObjectNode.class);
+        when(objectMapper.createObjectNode()).thenReturn(enrichedContentJson);
+        when(objectMapper.convertValue(eq(enrichedContentJson), any(TypeReference.class)))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        JsonNode rootNode = mock(JsonNode.class);
+        JsonNode firstElement = mock(JsonNode.class);
+        JsonNode childrenNode = mock(JsonNode.class);
+        when(objectMapper.readTree(anyString())).thenReturn(rootNode, childrenNode);
+        when(rootNode.get(0)).thenReturn(firstElement);
+        JsonNode childrenTextNode = mock(JsonNode.class);
+        when(firstElement.get(Constants.CHILDREN)).thenReturn(childrenTextNode);
+        when(childrenTextNode.asText()).thenReturn("{}");
+        when(childrenNode.fields()).thenReturn(Collections.emptyIterator());
+        when(childrenNode.has(Constants.RESULT)).thenReturn(false);
+
+        ApiResponse response = playListService.searchPlayListForOrg(searchDto);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getResponseCode());
+        verify(redisCacheMngr, times(2)).hget(orgId + contextType, orgId);
     }
 
     /**

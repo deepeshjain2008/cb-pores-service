@@ -865,11 +865,31 @@ class InterestServiceImplTest {
     void test_searchDemand_shortSearchString() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         SearchCriteria searchCriteria = new SearchCriteria();
-        searchCriteria.setSearchString("ab");
+        searchCriteria.setSearchString("a");
 
         CustomResponse response = interestService.searchDemand(searchCriteria);
 
-        assertEquals(HttpStatus.OK, response.getResponseCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
+    }
+
+    /**
+     * Test case for searchDemand method when esUtilService throws an exception.
+     * This test verifies that the method returns an INTERNAL_SERVER_ERROR response
+     * and persists the (null) search result back into redis.
+     */
+    @Test
+    void test_searchDemand_esUtilServiceThrows_returnsInternalServerError() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        SearchCriteria searchCriteria = new SearchCriteria();
+        searchCriteria.setSearchString("validSearch");
+
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(esUtilService.searchDocuments(eq(Constants.INTEREST_INDEX_NAME), eq(searchCriteria)))
+                .thenThrow(new RuntimeException("es down"));
+
+        CustomResponse response = interestService.searchDemand(searchCriteria);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
     }
 
     /**

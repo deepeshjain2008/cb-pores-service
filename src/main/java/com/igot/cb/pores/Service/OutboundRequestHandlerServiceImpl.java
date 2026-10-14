@@ -60,13 +60,7 @@ public class OutboundRequestHandlerServiceImpl {
 				log.debug(str.toString());
 			}
 		} catch (HttpClientErrorException e) {
-			try {
-				response = (new ObjectMapper()).readValue(e.getResponseBodyAsString(),
-						new TypeReference<HashMap<String, Object>>() {
-						});
-			} catch (Exception e1) {
-				// response body isn't valid JSON; keep response as whatever was already set
-			}
+			response = parseErrorResponseBody(e);
 			log.error("Failed to get details. ", e);
 		} catch (Exception e) {
 			log.error(e);
@@ -92,13 +86,7 @@ public class OutboundRequestHandlerServiceImpl {
 			}
 			response = restTemplate.getForObject(uri, Map.class);
 		} catch (HttpClientErrorException e) {
-			try {
-				response = (new ObjectMapper()).readValue(e.getResponseBodyAsString(),
-						new TypeReference<HashMap<String, Object>>() {
-						});
-			} catch (Exception e1) {
-				// response body isn't valid JSON; keep response as whatever was already set
-			}
+			response = parseErrorResponseBody(e);
 			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		} catch (Exception e) {
 			log.error(e);
@@ -160,13 +148,7 @@ public class OutboundRequestHandlerServiceImpl {
 			HttpEntity<Object> entity = new HttpEntity<>(headers);
 			response = restTemplate.exchange(uri, HttpMethod.GET, entity, Map.class).getBody();
 		} catch (HttpClientErrorException e) {
-			try {
-				response = (new ObjectMapper()).readValue(e.getResponseBodyAsString(),
-						new TypeReference<HashMap<String, Object>>() {
-						});
-			} catch (Exception e1) {
-				// response body isn't valid JSON; keep response as whatever was already set
-			}
+			response = parseErrorResponseBody(e);
 			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		} catch (Exception e) {
 			log.error(e);
@@ -204,13 +186,7 @@ public class OutboundRequestHandlerServiceImpl {
 				log.debug(str.toString());
 			}
 		} catch (HttpClientErrorException hce) {
-			try {
-				response = (new ObjectMapper()).readValue(hce.getResponseBodyAsString(),
-						new TypeReference<HashMap<String, Object>>() {
-						});
-			} catch (Exception e1) {
-				// response body isn't valid JSON; keep response as whatever was already set
-			}
+			response = parseErrorResponseBody(hce);
 			log.error(ERROR_RECEIVED + hce.getResponseBodyAsString(), hce);
 		} catch(JsonProcessingException e) {
 			log.error(e);
@@ -240,19 +216,24 @@ public class OutboundRequestHandlerServiceImpl {
 				logDetails(uri, response);
 			}
 		} catch (HttpClientErrorException e) {
-			try {
-				response = (new ObjectMapper()).readValue(e.getResponseBodyAsString(),
-						new TypeReference<HashMap<String, Object>>() {
-						});
-			} catch (Exception e1) {
-				// response body isn't valid JSON; keep response as whatever was already set
-			}
+			response = parseErrorResponseBody(e);
 			log.error(ERROR_RECEIVED + e.getResponseBodyAsString(), e);
 		}
 		if (response == null) {
 			return MapUtils.EMPTY_MAP;
 		}
 		return response;
+	}
+
+	private Map<String, Object> parseErrorResponseBody(HttpClientErrorException e) {
+		try {
+			return (new ObjectMapper()).readValue(e.getResponseBodyAsString(),
+					new TypeReference<HashMap<String, Object>>() {
+					});
+		} catch (Exception e1) {
+			// response body isn't valid JSON
+			return null;
+		}
 	}
 
 	private void logDetails(String uri, Object objectDetails) {

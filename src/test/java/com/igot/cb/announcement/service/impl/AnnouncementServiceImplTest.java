@@ -227,6 +227,24 @@ class AnnouncementServiceImplTest {
     }
 
     /**
+     * Test case for createAnnouncement method when an unexpected exception occurs while processing.
+     * This test verifies that the failure is wrapped in a CustomException with an INTERNAL_SERVER_ERROR status.
+     */
+    @Test
+    void test_createAnnouncement_unexpectedException_wrapsInCustomException() {
+        ObjectMapper realObjectMapper = new ObjectMapper();
+        ObjectNode announcementEntity = realObjectMapper.createObjectNode();
+
+        when(announcementRepository.save(any(AnnouncementEntity.class)))
+                .thenThrow(new RuntimeException("DB connection lost"));
+
+        CustomException exception = assertThrows(CustomException.class, () ->
+                announcementService.createAnnouncement(announcementEntity));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getHttpStatusCode());
+    }
+
+    /**
      * Tests that the createErrorResponse method properly sets all fields of the CustomResponse object
      * when called with valid input parameters.
      */
