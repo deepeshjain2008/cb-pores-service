@@ -80,9 +80,9 @@ class KarmaQuestServiceImplTest {
     void test_getInterest_recordMissingStringifiedFields_skipsParsing() {
         String interestId = "test-interest-id";
         List<Map<String, Object>> mockResponse = new ArrayList<>();
-        Map<String, Object> record = new HashMap<>();
-        record.put("someOtherField", "value");
-        mockResponse.add(record);
+        Map<String, Object> interestRecord = new HashMap<>();
+        interestRecord.put("someOtherField", "value");
+        mockResponse.add(interestRecord);
 
         when(cassandraOperation.getRecordsByPropertiesByKey(eq(Constants.DATABASE), eq(Constants.TABLE), any(), any(), eq(interestId)))
             .thenReturn(mockResponse);

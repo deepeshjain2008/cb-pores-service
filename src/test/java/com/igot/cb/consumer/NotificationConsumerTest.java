@@ -82,6 +82,40 @@ class NotificationConsumerTest {
         verify(cassandraOperation, timeout(3000).atLeastOnce()).getRecordsByPropertiesWithoutFiltering(any(), any(), any(), isNull(), anyInt());
     }
 
+    /**
+     * Test case for processNotification when isSpvRequest is true and the
+     * demand status is "Invalid". This exercises the "Additional notifications
+     * for SPV requests" branch (handleSpvRequest call), which is otherwise
+     * never reached since the "Send notifications" block only handles
+     * ASSIGNED/UNASSIGNED statuses.
+     */
+    @Test
+    void testProcessNotification_spvRequest_invalidStatus_callsHandleSpvRequest() {
+        Map<String, Object> request = new HashMap<>();
+        request.put(Constants.STATUS, Constants.INVALID);
+        request.put(Constants.ROOT_ORG_ID, "org123");
+        request.put(Constants.DEMAND_ID, "demand123");
+        request.put(Constants.OWNER, "owner-user-1");
+        request.put(Constants.OBJECTIVE, "some objective");
+
+        Map<String, Object> demandRequest = new HashMap<>();
+        demandRequest.put(Constants.DATA, request);
+        demandRequest.put(Constants.IS_SPV_REQUEST, true);
+
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(
+                        any(), any(), any(), isNull(), anyInt()))
+                .thenReturn(List.of(Map.of(Constants.USER_ROOT_ORG_NAME, "OrgName")));
+        when(cbServerProperties.getSbUrl()).thenReturn("http://dummyurl.com/");
+        when(cbServerProperties.getUserSearchEndPoint()).thenReturn("searchUser");
+        when(cbServerProperties.getNotifyServiceHost()).thenReturn("http://notifyhost");
+        when(cbServerProperties.getNotificationAsyncPath()).thenReturn("/notifyAsync");
+
+        notificationConsumer.processNotification(demandRequest);
+
+        verify(outboundRequestHandlerServiceImpl).fetchResultUsingPost(
+                eq("http://notifyhost/notifyAsync"), anyMap(), isNull());
+    }
+
     @Test
     void testDemandContentConsumer_invalidPayload_shouldLogError() {
         ConsumerRecord<String, String> record = new ConsumerRecord<>("test", 0, 0L, "key", "{invalidJson");
@@ -220,6 +254,53 @@ class NotificationConsumerTest {
 
         List<String> emails = notificationConsumer.getCBPAdminDetails(rootOrgIds);
         assertNotNull(emails);
+        assertEquals(1, emails.size());
+        assertEquals("admin1@example.com", emails.get(0));
+    }
+
+    /**
+     * Test case for getCBPAdminDetails when a content entry's rootOrgId is NOT
+     * contained in the requested rootOrgIds set. This exercises the false
+     * outcome of the "rootOrgIds.contains(rootOrgId)" clause, verifying that
+     * such an entry's email is filtered out while a matching entry's is kept.
+     */
+    @Test
+    void testGetCBPAdminDetails_filtersOutNonMatchingRootOrgId() throws Exception {
+        Set<String> rootOrgIds = Set.of("org1");
+
+        Map<String, Object> matchingPersonalDetails = new HashMap<>();
+        matchingPersonalDetails.put(Constants.PRIMARY_EMAIL, "admin1@example.com");
+        Map<String, Object> matchingProfileDetails = new HashMap<>();
+        matchingProfileDetails.put(Constants.PERSONAL_DETAILS, matchingPersonalDetails);
+        Map<String, Object> matchingContent = new HashMap<>();
+        matchingContent.put(Constants.ROOT_ORG_ID, "org1");
+        matchingContent.put(Constants.PROFILE_DETAILS, matchingProfileDetails);
+
+        Map<String, Object> nonMatchingPersonalDetails = new HashMap<>();
+        nonMatchingPersonalDetails.put(Constants.PRIMARY_EMAIL, "admin2@example.com");
+        Map<String, Object> nonMatchingProfileDetails = new HashMap<>();
+        nonMatchingProfileDetails.put(Constants.PERSONAL_DETAILS, nonMatchingPersonalDetails);
+        Map<String, Object> nonMatchingContent = new HashMap<>();
+        nonMatchingContent.put(Constants.ROOT_ORG_ID, "org-not-requested");
+        nonMatchingContent.put(Constants.PROFILE_DETAILS, nonMatchingProfileDetails);
+
+        List<Map<String, Object>> contents = List.of(matchingContent, nonMatchingContent);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put(Constants.CONTENT, contents);
+        Map<String, Object> result = new HashMap<>();
+        result.put(Constants.RESPONSE, response);
+        Map<String, Object> searchProfileApiResp = new HashMap<>();
+        searchProfileApiResp.put(Constants.RESPONSE_CODE, "OK");
+        searchProfileApiResp.put(Constants.RESULT, result);
+
+        when(cbServerProperties.getSbUrl()).thenReturn("http://dummyurl.com/");
+        when(cbServerProperties.getUserSearchEndPoint()).thenReturn("searchUser");
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPost(anyString(), anyMap(), anyMap()))
+                .thenReturn(searchProfileApiResp);
+
+        List<String> emails = notificationConsumer.getCBPAdminDetails(rootOrgIds);
+
         assertEquals(1, emails.size());
         assertEquals("admin1@example.com", emails.get(0));
     }

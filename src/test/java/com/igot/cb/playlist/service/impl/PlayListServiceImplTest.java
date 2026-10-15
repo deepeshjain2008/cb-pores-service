@@ -10,6 +10,7 @@ import com.igot.cb.playlist.dto.SearchDto;
 import com.igot.cb.playlist.entity.PlayListEntity;
 import com.igot.cb.playlist.repository.PlayListRepository;
 import com.igot.cb.playlist.util.RedisCacheMngr;
+import com.igot.cb.pores.Service.OutboundRequestHandlerServiceImpl;
 import com.igot.cb.pores.elasticsearch.dto.SearchCriteria;
 import com.igot.cb.pores.elasticsearch.dto.SearchResult;
 import com.igot.cb.pores.elasticsearch.service.EsUtilService;
@@ -60,6 +61,9 @@ class PlayListServiceImplTest {
 
     @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private OutboundRequestHandlerServiceImpl outboundRequestHandlerService;
 
     @Mock
     private PayloadValidation payloadValidation;
@@ -267,18 +271,25 @@ class PlayListServiceImplTest {
      * CHILDREN field, exercising the content-enrichment branch.
      */
     @Test
-    void test_createV2PlayList_withChildren_attemptsEnrichment() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode playListDetails = objectMapper.createObjectNode();
+    void test_createV2PlayList_withChildren_attemptsEnrichment() throws Exception {
+        ObjectMapper realObjectMapper = new ObjectMapper();
+        ObjectNode playListDetails = realObjectMapper.createObjectNode();
         playListDetails.put(Constants.ORG_ID, "testOrgId");
         playListDetails.put(Constants.RQST_CONTENT_TYPE, "testContentType");
         playListDetails.putArray(Constants.CHILDREN).add("child1");
 
+        when(cbServerProperties.getCourseCategoryFacet()).thenReturn(new String[]{"category1"});
+        when(outboundRequestHandlerService.fetchResultUsingPost(any(), any(), any()))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.createObjectNode()).thenReturn(realObjectMapper.createObjectNode());
+        when(objectMapper.convertValue(any(JsonNode.class), any(TypeReference.class)))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
         ApiResponse response = playListService.createV2PlayList(playListDetails);
 
-        // Downstream enrichment/redis persistence isn't fully mocked here; this test exists
-        // specifically to exercise the "has CHILDREN" branch of the create flow.
-        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getResponseCode());
+        assertEquals(Constants.SUCCESS, response.get(Constants.RESPONSE));
     }
 
     /**
@@ -1030,7 +1041,7 @@ class PlayListServiceImplTest {
      * CHILDREN field, exercising the content-enrichment branch.
      */
     @Test
-    void test_updateV2PlayList_withChildren_attemptsEnrichment() {
+    void test_updateV2PlayList_withChildren_attemptsEnrichment() throws Exception {
         ObjectMapper realObjectMapper = new ObjectMapper();
         ObjectNode playListDetails = realObjectMapper.createObjectNode();
         playListDetails.put(Constants.ID, "123");
@@ -1046,11 +1057,20 @@ class PlayListServiceImplTest {
         when(playListRepository.save(any(PlayListEntity.class)))
                 .thenReturn(existingPlayList);
 
+        when(cbServerProperties.getCourseCategoryFacet()).thenReturn(new String[]{"category1"});
+        when(outboundRequestHandlerService.fetchResultUsingPost(any(), any(), any()))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.createObjectNode()).thenReturn(realObjectMapper.createObjectNode());
+        when(objectMapper.convertValue(any(JsonNode.class), any(TypeReference.class)))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.convertValue(any(JsonNode.class), eq(Map.class)))
+                .thenReturn(new HashMap<>());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
         ApiResponse response = playListService.updateV2PlayList(playListDetails);
 
-        // Downstream enrichment/redis persistence isn't fully mocked here; this test exists
-        // specifically to exercise the "has CHILDREN" branch of the update flow.
-        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getResponseCode());
+        assertEquals(Constants.SUCCESSFULLY_UPDATED, response.getResult().get(Constants.STATUS));
     }
 
     /**
