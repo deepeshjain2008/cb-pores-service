@@ -179,4 +179,80 @@ class Base64UtilTest {
         assertArrayEquals(expected, result);
     }
 
+    /**
+     * Tests decoding a group with 2 data characters followed by "==" padding
+     * (encodes a single byte). This exercises the decoder's mid-stream EQUALS
+     * handling for a 2-data-char group, and the follow-up second padding char.
+     */
+    @Test
+    void test_decode_singleByteWithDoublePadding() {
+        byte[] result = Base64Util.decode("QQ==", Base64Util.DEFAULT);
+        assertArrayEquals(new byte[]{0x41}, result);
+    }
+
+    /**
+     * Tests decoding Base64 input with an embedded newline in the middle of
+     * a 4-character group. Whitespace/non-data bytes are documented as
+     * optional/ignorable within the input, which forces the decoder off its
+     * fast path and through the slow state machine for a full subsequent
+     * data character (completing a triple mid-stream).
+     */
+    @Test
+    void test_decode_withEmbeddedNewline_slowPathContinuation() {
+        byte[] result = Base64Util.decode("SG\nVsbG8gV29ybGQ=", Base64Util.DEFAULT);
+        assertArrayEquals("Hello World".getBytes(), result);
+    }
+
+    /**
+     * Tests round-tripping a single byte through unpadded ("NO_PADDING")
+     * Base64 - a common encoding style (e.g. JWT/base64url). The decoder
+     * must correctly finish on a 2-character leftover group with no
+     * trailing '=' characters at all.
+     */
+    @Test
+    void test_decode_unpadded_oneLeftoverByte() {
+        byte[] original = {65};
+        byte[] encoded = Base64Util.encode(original, Base64Util.NO_PADDING | Base64Util.NO_WRAP);
+        byte[] decoded = Base64Util.decode(encoded, Base64Util.DEFAULT);
+        assertArrayEquals(original, decoded);
+    }
+
+    /**
+     * Tests round-tripping two bytes through unpadded Base64. The decoder
+     * must correctly finish on a 3-character leftover group with no
+     * trailing '=' characters at all.
+     */
+    @Test
+    void test_decode_unpadded_twoLeftoverBytes() {
+        byte[] original = {65, 4};
+        byte[] encoded = Base64Util.encode(original, Base64Util.NO_PADDING | Base64Util.NO_WRAP);
+        byte[] decoded = Base64Util.decode(encoded, Base64Util.DEFAULT);
+        assertArrayEquals(original, decoded);
+    }
+
+    /**
+     * Tests encoding a long input (more than LINE_GROUPS * 3 bytes) with
+     * line-wrapping enabled, forcing the per-line group counter to wrap
+     * around at least once mid-stream and insert a newline inside the main
+     * encoding loop (not just at the very end).
+     */
+    @Test
+    void test_encode_longInput_wrapsMultipleLines() {
+        byte[] input = new byte[70];
+        for (int i = 0; i < input.length; i++) {
+            input[i] = (byte) (i % 128);
+        }
+
+        byte[] encoded = Base64Util.encode(input, Base64Util.DEFAULT);
+        String encodedStr = new String(encoded);
+
+        // With LINE_GROUPS=19 groups of 3 bytes (57 bytes) per line, a
+        // 70-byte input must wrap onto a second line.
+        assertTrue(encodedStr.indexOf('\n') < encodedStr.lastIndexOf('\n'),
+                "expected at least two newlines (mid-stream wrap + trailing)");
+
+        byte[] decoded = Base64Util.decode(encoded, Base64Util.DEFAULT);
+        assertArrayEquals(input, decoded);
+    }
+
 }
