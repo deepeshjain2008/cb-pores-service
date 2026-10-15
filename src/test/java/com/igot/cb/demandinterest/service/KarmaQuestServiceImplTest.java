@@ -72,6 +72,28 @@ class KarmaQuestServiceImplTest {
         verify(cassandraOperation).getRecordsByPropertiesByKey(eq(Constants.DATABASE), eq(Constants.TABLE), any(), any(), eq(interestId));
     }
 
+    /**
+     * Test case for getInterest method when a record is missing the stringified fields.
+     * This covers the branch where containsKey(fieldName) is false, so no parsing is attempted.
+     */
+    @Test
+    void test_getInterest_recordMissingStringifiedFields_skipsParsing() {
+        String interestId = "test-interest-id";
+        List<Map<String, Object>> mockResponse = new ArrayList<>();
+        Map<String, Object> record = new HashMap<>();
+        record.put("someOtherField", "value");
+        mockResponse.add(record);
+
+        when(cassandraOperation.getRecordsByPropertiesByKey(eq(Constants.DATABASE), eq(Constants.TABLE), any(), any(), eq(interestId)))
+            .thenReturn(mockResponse);
+
+        Object result = karmaQuestService.getInterest(interestId);
+
+        assertNotNull(result);
+        List<?> resultList = (List<?>) result;
+        assertEquals(1, resultList.size());
+    }
+
     @Test
     void test_insertInterest_success() throws Exception {
         ObjectMapper mapper = new ObjectMapper();

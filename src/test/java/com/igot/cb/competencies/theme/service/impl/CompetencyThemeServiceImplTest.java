@@ -676,6 +676,46 @@ class CompetencyThemeServiceImplTest {
     }
 
     /**
+     * Test case for loadCompetencyTheme with a mixed batch exercising every branch of the
+     * per-item validation: a normal item, a duplicate title, a missing type field, an empty
+     * type value, and a literal null element.
+     */
+    @Test
+    void test_loadCompetencyTheme_mixedBatch_coversAllFieldBranches() {
+        MultipartFile file = mock(MultipartFile.class);
+        String token = "validToken";
+        String userId = "testUser";
+
+        when(accessTokenValidator.verifyUserToken(token)).thenReturn(userId);
+        when(esUtilService.isIndexPresent(Constants.COMP_THEME_INDEX_NAME)).thenReturn(true);
+
+        ObjectMapper realMapper = new ObjectMapper();
+        SearchResult searchResult = new SearchResult();
+        searchResult.setData(realMapper.createArrayNode());
+        when(esUtilService.searchDocuments(eq(Constants.COMP_THEME_INDEX_NAME), any(SearchCriteria.class)))
+                .thenReturn(searchResult);
+
+        List<Map<String, String>> processedData = new ArrayList<>();
+        when(fileProcessService.processExcelFile(file)).thenReturn(processedData);
+
+        com.fasterxml.jackson.databind.node.ArrayNode batch = realMapper.createArrayNode();
+        batch.add(realMapper.createObjectNode().put(Constants.COMPETENCY_THEME_TYPE, "Theme A"));
+        batch.add(realMapper.createObjectNode().put(Constants.COMPETENCY_THEME_TYPE, "Theme A"));
+        batch.add(realMapper.createObjectNode().put("NotType", "ignored"));
+        batch.add(realMapper.createObjectNode().put(Constants.COMPETENCY_THEME_TYPE, ""));
+        batch.addNull();
+
+        when(objectMapper.valueToTree(processedData)).thenReturn(batch);
+        when(objectMapper.createObjectNode()).thenReturn(realMapper.createObjectNode());
+
+        competencyThemeService.loadCompetencyTheme(file, token);
+
+        // Only the first item should pass every branch and get persisted.
+        verify(competencyThemeRepository, times(1)).saveAll(argThat(list ->
+                ((List<?>) list).size() == 1));
+    }
+
+    /**
      * Testcase 2 for @Override public CustomResponse readCompTheme(String id)
      * Path constraints: !((StringUtils.isEmpty(id))), (StringUtils.isNotEmpty(cachedJson))
      * This test verifies that the method returns the correct response when a valid ID is provided

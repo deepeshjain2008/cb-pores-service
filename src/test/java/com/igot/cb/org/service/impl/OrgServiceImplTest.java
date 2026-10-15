@@ -545,6 +545,49 @@ class OrgServiceImplTest {
     }
 
     @Test
+    void test_readFramework_blankFrameworkStatus_treatedAsProcessNeeded() {
+        // Arrange
+        String frameworkName = "testFramework";
+        String orgId = "testOrgId";
+        String termName = "testTerm";
+        String userAuthToken = "testToken";
+        String userId = "testUserId";
+
+        String url = cbServerProperties.getSbUrl() + cbServerProperties.getUserReadEndPoint() + userId;
+
+        Map<String, Object> mockResponseMap = new HashMap<>();
+        mockResponseMap.put(Constants.ROLES, List.of("MDO_LEADER", "user"));
+
+        Map<String, Object> mockResultMap = new HashMap<>();
+        mockResultMap.put(Constants.RESPONSE, mockResponseMap);
+
+        Map<String, Object> mockReadData = new HashMap<>();
+        mockReadData.put(Constants.RESULT, mockResultMap);
+
+        when(outboundRequestHandlerServiceImpl.fetchUsingGetWithHeadersProfile(eq(url), anyMap()))
+                .thenReturn(mockReadData);
+
+        when(accessTokenValidator.verifyUserToken(userAuthToken)).thenReturn(userId);
+
+        List<Map<String, Object>> orgDetails = new ArrayList<>();
+        Map<String, Object> orgDetail = new HashMap<>();
+        orgDetail.put(Constants.FRAMEWORK_STATUS, "");
+        orgDetail.put(Constants.FRAMEWORKID, "");
+        orgDetails.add(orgDetail);
+
+        when(cassandraOperation.getRecordsByPropertiesWithoutFiltering(
+                eq(Constants.KEYSPACE_SUNBIRD), eq(Constants.ORG_TABLE), anyMap(), isNull(), eq(1)))
+                .thenReturn(orgDetails);
+
+        // Act
+        ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);
+
+        // Assert: blank FRAMEWORK_STATUS also means "process needed", same as FAILED
+        assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode());
+        assertEquals(Constants.FRAMEWORK_PROCESS_ALREADY_INITIALISED, response.getParams().getErrMsg());
+    }
+
+    @Test
     void test_readFramework_11() {
         // Arrange
         String frameworkName = "testFramework";
@@ -954,6 +997,13 @@ class OrgServiceImplTest {
                 .thenReturn(responseMap);
         Map<String, Object> cassandraUpdate = Map.of(Constants.RESPONSE, Constants.SUCCESS);
         when(cassandraOperation.updateRecord(any(), any(), any())).thenReturn(cassandraUpdate);
+
+        // Step 4: Mock the org-framework-status PATCH notification to succeed
+        Map<String, Object> patchResponse = Map.of(
+                Constants.RESPONSE_CODE, Constants.OK,
+                Constants.RESULT, Map.of(Constants.RESPONSE, Constants.SUCCESS));
+        when(outboundRequestHandlerServiceImpl.fetchResultUsingPatch(anyString(), any(), anyMap()))
+                .thenReturn(patchResponse);
 
         // Execute the method
         ApiResponse response = orgService.readFramework(frameworkName, orgId, termName, userAuthToken);

@@ -146,7 +146,7 @@ class OrgBookmarkServiceImplTest {
                 .thenReturn(searchResult);
         Map<String, Object> convertedMap = new HashMap<>();
         convertedMap.put(Constants.TOTAL_COUNT, 1L);
-        when(objectMapper.convertValue(eq(searchResult), eq(Map.class))).thenReturn(convertedMap);
+        when(objectMapper.convertValue(searchResult, Map.class)).thenReturn(convertedMap);
 
         ApiResponse response = orgBookmarkService.createOrgBookmark(validPayload.deepCopy(), "token");
 

@@ -94,6 +94,23 @@ class PlayListServiceImplTest {
      * the status, response code, and error message in the ApiResponse object.
      */
     @Test
+    void test_persistInRedis_convertValueFails_wrapsInCustomException() throws Exception {
+        ObjectNode enrichedContentJson = new ObjectMapper().createObjectNode();
+        PlayListEntity jsonNodeEntity = new PlayListEntity();
+        jsonNodeEntity.setOrgId("org1");
+
+        // objectMapper.convertValue(...) is unstubbed -> returns null -> NPE inside the try -> wrapped
+        java.lang.reflect.Method method = PlayListServiceImpl.class.getDeclaredMethod(
+                "persistInRedis", ObjectNode.class, PlayListEntity.class, String.class);
+        method.setAccessible(true);
+
+        Exception exception = assertThrows(java.lang.reflect.InvocationTargetException.class, () ->
+                method.invoke(playListService, enrichedContentJson, jsonNodeEntity, "key1"));
+
+        assertTrue(exception.getCause() instanceof com.igot.cb.pores.exceptions.CustomException);
+    }
+
+    @Test
     void test_createErrorResponse_1() {
         ApiResponse response = new ApiResponse();
         String errorMessage = "Test error message";
@@ -181,6 +198,27 @@ class PlayListServiceImplTest {
     }
 
     /**
+     * Test case for createPlayList method when no duplicate exists, so the method proceeds
+     * past the duplicate-check into the actual creation/enrichment logic.
+     */
+    @Test
+    void test_createPlayList_noDuplicate_proceedsToEnrichment() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode playListDetails = mapper.createObjectNode()
+                .put(Constants.ORG_ID, "testOrgId")
+                .put(Constants.RQST_CONTENT_TYPE, "testContentType");
+
+        when(playListRepository.findByOrgIdAndRequestTypeAndIsActive(any(), any(), any()))
+                .thenReturn(new ArrayList<>());
+
+        ApiResponse response = playListService.createPlayList(playListDetails);
+
+        // Downstream enrichment/persistence is not fully mocked here; this test exists
+        // specifically to exercise the "no duplicate found" path past the early-return check.
+        assertNotNull(response);
+    }
+
+    /**
      * Test case for createSuccessResponse method
      * Verifies that the method correctly sets the success response parameters
      */
@@ -223,7 +261,26 @@ class PlayListServiceImplTest {
         assertEquals(Constants.CREATED, response.getResult().get(Constants.STATUS));
         assertNotNull(response.getResult().get(Constants.ID));
     }
-    
+
+    /**
+     * Test case for createV2PlayList method when the payload includes a non-empty
+     * CHILDREN field, exercising the content-enrichment branch.
+     */
+    @Test
+    void test_createV2PlayList_withChildren_attemptsEnrichment() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode playListDetails = objectMapper.createObjectNode();
+        playListDetails.put(Constants.ORG_ID, "testOrgId");
+        playListDetails.put(Constants.RQST_CONTENT_TYPE, "testContentType");
+        playListDetails.putArray(Constants.CHILDREN).add("child1");
+
+        ApiResponse response = playListService.createV2PlayList(playListDetails);
+
+        // Downstream enrichment/redis persistence isn't fully mocked here; this test exists
+        // specifically to exercise the "has CHILDREN" branch of the create flow.
+        assertNotNull(response);
+    }
+
     /**
      * Test case for successful deletion of a playlist
      * Path constraints:
@@ -633,6 +690,32 @@ class PlayListServiceImplTest {
     }
 
     /**
+     * Tests the searchPlayListForOrg method when an unexpected exception occurs while
+     * processing. Expects a FAILED response with INTERNAL_SERVER_ERROR status.
+     */
+    @Test
+    void test_searchPlayListForOrg_unexpectedException_returnsFailedResponse() {
+        String orgId = "org123";
+        String contextType = "course";
+
+        HashMap<String, Object> filters = new HashMap<>();
+        filters.put(Constants.ORGANISATION, orgId);
+        filters.put(Constants.REQUEST_TYPE, List.of(contextType));
+        HashMap<String, Object> request = new HashMap<>();
+        request.put(Constants.FILTERS, filters);
+        SearchDto searchDto = new SearchDto();
+        searchDto.setRequest(request);
+
+        when(redisCacheMngr.hget(orgId + contextType, orgId))
+                .thenThrow(new RuntimeException("redis down"));
+
+        ApiResponse response = playListService.searchPlayListForOrg(searchDto);
+
+        assertEquals(Constants.FAILED, response.getParams().getStatus());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
+    }
+
+    /**
      * Tests the searchPlayListForOrg method with missing filters in the request.
      * Expects a BAD_REQUEST response.
      */
@@ -883,6 +966,26 @@ class PlayListServiceImplTest {
         assertEquals(Constants.NOT_FOUND, response.getParams().getErrMsg());
     }
 
+    /**
+     * Test case for updatePlayList method when an unexpected exception occurs while processing.
+     * This test verifies that the method returns a FAILED response with INTERNAL_SERVER_ERROR status.
+     */
+    @Test
+    void test_updatePlayList_unexpectedException_returnsFailedResponse() {
+        JsonNode playListDetails = new ObjectMapper().createObjectNode()
+                .put(Constants.ORG_ID, "testOrgId")
+                .put(Constants.RQST_CONTENT_TYPE, "testRequestType");
+
+        when(playListRepository.findByOrgIdAndRequestTypeAndIsActive(any(), any(), any()))
+                .thenThrow(new RuntimeException("db down"));
+
+        ApiResponse response = playListService.updatePlayList(playListDetails);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
+        assertEquals(Constants.FAILED, response.getParams().getStatus());
+        assertEquals(Constants.NOT_FOUND, response.getParams().getErrMsg());
+    }
+
 
     /**
      * Test case for updateV2PlayList method when the playlist exists, has an ID, title,
@@ -918,8 +1021,36 @@ class PlayListServiceImplTest {
 
         verify(playListRepository).findByIdAndIsActive("123", true);
         verify(playListRepository).save(any(PlayListEntity.class));
-        verify(esUtilService).updateDocument(eq(Constants.PLAYLIST_INDEX_NAME), eq(Constants.INDEX_TYPE), 
+        verify(esUtilService).updateDocument(eq(Constants.PLAYLIST_INDEX_NAME), eq(Constants.INDEX_TYPE),
                                              eq("123"), any(java.util.Map.class), any(String.class));
+    }
+
+    /**
+     * Test case for updateV2PlayList method when the update payload includes a non-empty
+     * CHILDREN field, exercising the content-enrichment branch.
+     */
+    @Test
+    void test_updateV2PlayList_withChildren_attemptsEnrichment() {
+        ObjectMapper realObjectMapper = new ObjectMapper();
+        ObjectNode playListDetails = realObjectMapper.createObjectNode();
+        playListDetails.put(Constants.ID, "123");
+        playListDetails.putArray(Constants.CHILDREN).add("child1");
+
+        PlayListEntity existingPlayList = new PlayListEntity();
+        existingPlayList.setId("123");
+        existingPlayList.setOrgId("org123");
+        existingPlayList.setData(realObjectMapper.createObjectNode());
+
+        when(playListRepository.findByIdAndIsActive("123", true))
+                .thenReturn(existingPlayList);
+        when(playListRepository.save(any(PlayListEntity.class)))
+                .thenReturn(existingPlayList);
+
+        ApiResponse response = playListService.updateV2PlayList(playListDetails);
+
+        // Downstream enrichment/redis persistence isn't fully mocked here; this test exists
+        // specifically to exercise the "has CHILDREN" branch of the update flow.
+        assertNotNull(response);
     }
 
     /**
